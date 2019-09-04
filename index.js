@@ -11,6 +11,23 @@ module.exports = function(homebridge) {
   homebridge.registerAccessory('homebridge-garagedoor-ryobi', 'RyobiGarageCommand', GarageCmdAccessory);
 };
 
+/* 
+NOTES:
+
+This code was initially forked from the git project  "apexad/homebridge-garagedoor-command".
+
+It has been significantly changed to do away with  adding files to support different garage door types. 
+I found the code hard to follow with no examples to actually hook up an opener, The basic logic here however is 
+very much lifted from that project and I am in gratitude.
+
+If someone was inclinced it would be straight forward I believe to add support for other door types adn/or add support for
+Multiple Ryobi GDOs. However that is an exercise for the future or someone else. For example I think you might need multiple 
+accounts and instances ryobi_GDO_API (which should be very stright forward.) And you'd have to hook up multiple accessories.
+
+Thinking about it more you might just be able to define additional accessories in the homebridge.json file and it might all work!
+
+*/
+
 function GarageCmdAccessory(log, config) {
   debug("Init homebridge-garagedoor-ryobi platform");
   
@@ -72,7 +89,6 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
 
 GarageCmdAccessory.prototype.getState = function(callback) {
   var accessory = this;
-  var command = accessory.stateCommand;
 
   accessory.garagedoor.getStatus (
   	function (err, state) {
@@ -125,19 +141,18 @@ GarageCmdAccessory.prototype.getServices = function() {
   this.garageDoorService = new Service.GarageDoorOpener(this.name);
 
   this.informationService
-  .setCharacteristic(Characteristic.Manufacturer, 'Garage Command')
+  .setCharacteristic(Characteristic.Manufacturer, 'Ryobi Garage-door Opener')
   .setCharacteristic(Characteristic.Model, 'Homebridge Plugin')
   .setCharacteristic(Characteristic.SerialNumber, '001');
 
   this.garageDoorService.getCharacteristic(Characteristic.TargetDoorState)
   .on('set', this.setState.bind(this));
 
-  if (this.stateCommand) {
-    this.garageDoorService.getCharacteristic(Characteristic.CurrentDoorState)
-    .on('get', this.getState.bind(this));
-    this.garageDoorService.getCharacteristic(Characteristic.TargetDoorState)
-    .on('get', this.getState.bind(this));
-  }
+  this.garageDoorService.getCharacteristic(Characteristic.CurrentDoorState)
+  .on('get', this.getState.bind(this));
+  
+  this.garageDoorService.getCharacteristic(Characteristic.TargetDoorState)
+  .on('get', this.getState.bind(this));
 
   return [this.informationService, this.garageDoorService];
 };

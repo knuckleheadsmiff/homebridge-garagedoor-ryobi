@@ -7,6 +7,28 @@ const apikeyURL =    'https://tti.tiwiconnect.com/api/login/'
 const deviceURL =    'https://tti.tiwiconnect.com/api/devices/'
 const websocketURL = 'wss://tti.tiwiconnect.com/api/wsrpc'
 
+/* 
+This is an API to control the Ryobi_GDO_API.This is built upon the work of others. Specifically:
+
+	https://yannipang.com/blog/ryobi-garage-door-api/
+	https://github.com/Madj42/RyobiGDO
+	https://community.smartthings.com/t/ryobi-modular-smart-garage-door-opener/
+
+	Commands (Not Implemented) to control lights:
+		If in the futrue a light switch feature was added as well could easily add this support
+
+		Turn On the Light:
+
+			{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"lightState":true},"topic":"GARAGEDOOR_ID"}}
+
+		Turn Off the Light:
+
+			 {"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"lightState":false},"topic":"GARAGEDOOR_ID"}}
+
+*/
+
+
+
 class Ryobi_GDO_API {
     constructor(email, password, deviceid, log, debug) {
         this.email = email;
@@ -38,6 +60,38 @@ class Ryobi_GDO_API {
         
         return this.apikey;
     }
+    
+    getDeviceID() {
+    	if (this.deviceid) return this.deviceid;
+    	
+		var queryUri = deviceURL + '/' + this.ryobi_device_id + "?username=" + this.ryobi_email + "&password=" + this.ryobi_password;
+        request(encodeURI(queryUri), function (err, response, body) {
+            if (!err) {
+                const jsonObj = JSON.parse(body);
+				debug( JSON.stringify(jsonObj, null, 2));
+                
+				try {
+					var deviceModel = jsonObj.result[0].deviceTypeIds[0]
+					if (deviceModel == 'gda500hub') {
+							var doorid = jsonObj.result[1].varName
+					}
+					else {
+							var doorid = jsonObj.result[0].varName
+					}
+					this.deviceid = doorid;
+				} catch(error) {
+					this.log.error("Error retrieving ryobi GDO getDeviceID");
+					this.log.error("Error Message 1: " + error);
+				}
+            } else {
+                this.log.error("Error retrieving ryobi GDO getDeviceID");
+                this.log.error("Error Message 2: " + err);
+            }
+        }.bind(this)});
+        
+        return this.deviceid;
+    }
+
 
     update(callback) {
         this.debug("Updating ryobi data:");
@@ -100,7 +154,7 @@ class Ryobi_GDO_API {
 			}.bind(this));
 
 			ws.on('message', function incoming(data) {
-				ws.send('{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"doorCommand":1},"topic":"'+ this.deviceid +'"}}');
+				ws.send('{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"doorCommand":1},"topic":"'+ this.getDeviceID() +'"}}');
 				ws.ping();
 				debug('GARAGEDOOR: OPENING');
 			}.bind(this));
@@ -127,7 +181,7 @@ class Ryobi_GDO_API {
 			}.bind(this));
 
 			ws.on('message', function incoming(data) {
-				ws.send('{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"doorCommand":0},"topic":"'+ this.deviceid +'"}}'); 
+				ws.send('{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"doorCommand":0},"topic":"'+ this.getDeviceID() +'"}}'); 
 				ws.ping();
 				debug('GARAGEDOOR: CLOSING');
 			}.bind(this));
@@ -144,6 +198,7 @@ class Ryobi_GDO_API {
 	}
 
 }
+
 
 module.exports = {
     Ryobi_GDO_API: Ryobi_GDO_API
