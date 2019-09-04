@@ -1,5 +1,8 @@
 # homebridge-garagedoor-ryobi
 
+## NOT WORKING YET: DO NOT USE
+
+
 [Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
 
 ## Installation
@@ -38,21 +41,22 @@ Field                   | Description
 
 ## Fetch garagedoor_id
 
-**If you leave this out the code will attempt to do the right thing.**
+**If you leave **garagedoor_id** out the config file the right thing should happen.**
 
-if you have a single garagedoor associated with your account. I but it here if the user coud have multiple garage doors associated with an account. I don't know if it is even allowed but it helped me when developing.
+If you can have multiple garage doors associated with an account (is this possible?) then maybe pass in the id using the instructions below. I mainly added it in the config file while I was developing and thought it might be usefule. Sorry for any confustions iuf it is not. 
 
 In a browser (I recommend using FireFox because it automatically formats the json result) execute:
 
 `https://tti.tiwiconnect.com/api/devices?username=RYOBI_ACCOUNT_EMAIL&password=RYOBI_PASSORD`
 
-You will get an array of results, if you have only 1 device (like me) look at **`result[0].varName`** except if result[0].deviceTypeIds[1] == `gda500hub` then use **`result[1].varName`** .
+You will get an array of results, if you have only 1 device (like me) the devide id will be **`result[0].varName`** except if result[0].deviceTypeIds[1] == `gda500hub` then use **`result[1].varName`** .
 
-##Kudos
+## Kudos
 
 I am standing on the shoulders of others.
 
 This work is based on work by:
+
 	https://yannipang.com/blog/ryobi-garage-door-api/
 	https://github.com/Madj42/RyobiGDO
 	https://community.smartthings.com/t/ryobi-modular-smart-garage-door-opener/
@@ -62,7 +66,7 @@ The project skeleton (although signigicantly changed) was forked from the [homeb
 ## FAQ
 
 ### Can I have multiple garage doors?
-Maybe, if you have separate ryobi accounts, one for each garage door, you should be able to add additional accessories with accounts and passwords in the json file. I have not tested this so if it works great. If not tell me and i'll update the FAQ if I cannot fix it.
+You add additional accessories, with accounts and passwords, in the homebrige configjson file. 
 If however you can have multiple openeris associated with one login then for now you arfe out of luck.
 
 ### Why use a password and not an apiKey of sorts?
