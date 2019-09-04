@@ -35,7 +35,7 @@ Field                   | Description
 **name**                | Name of the Garage Door (**required**)
 **email** 				| email associate with your garage doors ryobi account (**required**) 
 **password**			| apiKey associate with your garage doors ryobi account (**required**)
-**garagedoor_id**		| deviceID your garage doors -- see below (optional- most everyone can leave blank)
+**garagedoor_id**		| id your garage doors, this is the device that gets controlled (**recommend not setting**) see below
 **status_update_delay** | Time to have door in opening or closing state (defaults to 15 seconds)
 **poll_state_delay**    | Time between polling for the garage door's state (leave blank to disable state polling)
 
@@ -43,7 +43,7 @@ Field                   | Description
 
 **If you leave **garagedoor_id** out the config file the right thing should happen.**
 
-If you can have multiple garage doors associated with an account (is this possible?) then maybe pass in the id using the instructions below. I mainly added it in the config file while I was developing and thought it might be usefule. Sorry for any confustions iuf it is not. 
+If you can have multiple garage doors associated with an account (is this possible?) then maybe pass in the id using the instructions below. I mainly added it to the config file while I was developing and thought it might be useful. Sorry for any confustions if it is not. 
 
 In a browser (I recommend using FireFox because it automatically formats the json result) execute:
 
