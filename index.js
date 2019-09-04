@@ -62,7 +62,7 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
     function (err, result) {
       if (err) {
         accessory.log('Error: ' + err);
-        callback(err || new Error('Error setting ' + accessory.name + ' to ' + state));
+        callback(err || new Error('Error setting state to ' + state));
       } else {
         accessory.log('Set ' + accessory.name + ' to ' + state);
         if (isClosed) {
@@ -82,7 +82,7 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
             accessory.statusUpdateDelay * 1000
           );
         }
-       callback(null);
+       callback(null); // return null if no error.
      }
   }.bind(accessory.garagedoor));
 };
