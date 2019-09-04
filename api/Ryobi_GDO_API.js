@@ -3,15 +3,40 @@
 const 	request = require('request'),
 		WebSocket = require('ws');
 
-const deviceURL = 'https://tti.tiwiconnect.com/api/devices/'
+const apikeyURL =    'https://tti.tiwiconnect.com/api/login/'
+const deviceURL =    'https://tti.tiwiconnect.com/api/devices/'
 const websocketURL = 'wss://tti.tiwiconnect.com/api/wsrpc'
 
 class Ryobi_GDO_API {
-    constructor(email, password, deviceid, log) {
+    constructor(email, password, deviceid, log, debug) {
         this.email = email;
         this.password = password;
         this.deviceid = deviceid;
         this.log = log;
+        this.debug = debug;
+    }
+
+    getApiKey() {
+    	if (this.apikey) return this.apikey;
+    	
+        request.post({url: encodeURI(queryUri), form: {username: this.ryobi_email, password: ryobi_password}, function (err, response, body) {
+            if (!err) {
+                const jsonObj = JSON.parse(body);
+				debug( JSON.stringify(jsonObj, null, 2));
+                
+				try {
+					this.apikey = jsonObj.result.auth.apiKey;
+				} catch(error) {
+					this.log.error("Error retrieving ryobi GDO apiKey");
+					this.log.error("Error Message 1: " + error);
+				}
+            } else {
+                this.log.error("Error retrieving ryobi GDO apiKey");
+                this.log.error("Error Message 2: " + err);
+            }
+        }.bind(this)});
+        
+        return this.apikey;
     }
 
     update(callback) {
@@ -25,8 +50,8 @@ class Ryobi_GDO_API {
 				debug( JSON.stringify(jsonObj, null, 2));
                 
 				try {
-					report = this.parseReport(jsonObj, callback);
-					callback(null, weather);
+					state = this.parseReport(jsonObj, callback);
+					callback(null, state);
 				} catch(error) {
 					this.log.error("Error retrieving ryobi GDO status");
 					this.log.error("Error Message: " + error);
@@ -39,6 +64,7 @@ class Ryobi_GDO_API {
             }
         }.bind(this));
     }
+    
 
     parseReport(values) {
         let gdoState;
@@ -55,8 +81,8 @@ class Ryobi_GDO_API {
 			gdoState = "OPENING";
 		}
 
-		this.log("GARAGEDOOR STATE:"+ gdoState)
-        return {"gdoState": gdoState};
+		this.debug("GARAGEDOOR STATE:"+ gdoState)
+        return gdoState;
     }
     
     getState(callback) {
@@ -64,12 +90,13 @@ class Ryobi_GDO_API {
     }
     
     openDoor(callback) {
+		this.debug("GARAGEDOOR openDoor");
         try {
 			const ws = new WebSocket(websocketURL);
 
 			ws.on('open', function open() {
 				// Web Socket is connected, send data using send()
-				ws.send('{"jsonrpc":"2.0","id":3,"method":"srvWebSocketAuth","params": {"varName": "'+ this.email + '": "'+ apiKey +'"}}'); //CHANGE VARIABLES
+				ws.send('{"jsonrpc":"2.0","id":3,"method":"srvWebSocketAuth","params": {"varName": "'+ this.email + '": "'+ this.getApiKey() +'"}}'); //CHANGE VARIABLES
 			}.bind(this));
 
 			ws.on('message', function incoming(data) {
@@ -90,12 +117,13 @@ class Ryobi_GDO_API {
 	}
     
     closeDoor (callback) {
+		this.debug("GARAGEDOOR closeDoor");
         try {
 			const ws = new WebSocket('wss://tti.tiwiconnect.com/api/wsrpc');
 
 			ws.on('open', function open() {
 				// Web Socket is connected, send data using send()
-				ws.send('{"jsonrpc":"2.0","id":3,"method":"srvWebSocketAuth","params": {"varName": "'+ this.email + '","apiKey": "'+ apiKey +'"}}');
+				ws.send('{"jsonrpc":"2.0","id":3,"method":"srvWebSocketAuth","params": {"varName": "'+ this.email + '","apiKey": "'+ this.getApiKey() +'"}}');
 			}.bind(this));
 
 			ws.on('message', function incoming(data) {

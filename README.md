@@ -45,7 +45,7 @@ Field                   | Description
 
 In a Browser (easiest using FireFox because it formats the result) execute:
 
-`https://tti.tiwiconnect.com/api/devices?username=RYOBI_ACCOUNT_EMAIL&RYOBI_PASSORD`
+`https://tti.tiwiconnect.com/api/devices?username=RYOBI_ACCOUNT_EMAIL&password=RYOBI_PASSORD`
 
 You will get an array of results, if you have only 1 device (like me) look at `result[0]._id` That value is near the beginning out the result.
 Also the device type should be `gdoMasterUnit`. If you have only 1 device (like me) look at `result[0].deviceTypeIds[0]`

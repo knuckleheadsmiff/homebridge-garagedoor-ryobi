@@ -3,6 +3,7 @@ var Characteristic;
 var exec = require('child_process').exec;
 
 const ryobi_GDO_API = require('./api/Ryobi_GDO_API').Ryobi_GDO_API;
+const debug = require('debug')('homebridge-garagedoor-ryobi'),
 
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
@@ -11,7 +12,10 @@ module.exports = function(homebridge) {
 };
 
 function GarageCmdAccessory(log, config) {
+  debug("Init homebridge-garagedoor-ryobi platform");
+  
   this.log = log;
+  this.debug = debug;
   this.name = config.name;
   
   this.ryobi_email = config.email;
@@ -21,7 +25,7 @@ function GarageCmdAccessory(log, config) {
   this.statusUpdateDelay = config.status_update_delay || 15;
   this.pollStateDelay = config.poll_state_delay || 0;
   
-  this.garagedoor = new ryobi_GDO_API(this.ryobi_email, this.ryobi_password, this.ryobi_device_id, this.log);
+  this.garagedoor = new ryobi_GDO_API(this.ryobi_email, this.ryobi_password, this.ryobi_device_id, this.log, this.debug);
 }
 
 GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
@@ -63,27 +67,27 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
         }
        callback(null);
      }
-  }.bind(this));
+  }.bind(accessory.garagedoor));
 };
 
 GarageCmdAccessory.prototype.getState = function(callback) {
   var accessory = this;
   var command = accessory.stateCommand;
 
-  exec(command, function (err, stdout, stderr) {
-    if (err) {
-      accessory.log('Error: ' + err);
-      callback(err || new Error('Error getting state of ' + accessory.name));
-    } else {
-      var state = stdout.toString('utf-8').trim();
-      accessory.log('State of ' + accessory.name + ' is: ' + state);
-      callback(null, Characteristic.CurrentDoorState[state]);
-    }
+  accessory.garagedoor.getStatus (
+  	function (err, state) {
+		if (err) {
+		  accessory.log('Error: ' + err);
+		  callback(err || new Error('Error getting state of ' + accessory.name));
+		} else {
+		  accessory.log('State of ' + accessory.name + ' is: ' + state);
+		  callback(null, Characteristic.CurrentDoorState[state]);
+		}
 
-    if (accessory.pollStateDelay > 0) {
-      accessory.pollState();
-    }
-  });
+		if (accessory.pollStateDelay > 0) {
+		  accessory.pollState();
+		}
+  	});
 };
 
 GarageCmdAccessory.prototype.pollState = function() {
