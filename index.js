@@ -42,10 +42,10 @@ function GarageCmdAccessory(log, config) {
   this.statusUpdateDelay = config.status_update_delay || 15;
   this.pollStateDelay = config.poll_state_delay || 0;
   
-  this.garagedoor = new ryobi_GDO_API(this.ryobi_email, this.ryobi_password, this.ryobi_device_id, this.log, this.debug);
+  this.garagedoor = new ryobi_GDO_API(this.ryobi_email, this.ryobi_password, this.ryobi_device_id, Characteristic, this.log, this.debug);
 }
 
-GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
+GarageCmdAccessory.prototype.setState = function(targetState, callback, context) {
   if (context === 'pollState') {
     // The state has been updated by the pollState command - don't run the open/close command
     callback(null);
@@ -53,10 +53,9 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
   }
 
   var accessory = this;
-  var command = isClosed ? accessory.garagedoor.closeDoor : accessory.garagedoor.openDoor;
+  var command = (targetState == Characteristic.CurrentDoorState.CLOSED) ? accessory.garagedoor.closeDoor : accessory.garagedoor.openDoor;
   
-  var state = isClosed ? 'close' : 'open';
-  accessory.log('Command to run: ' + isClosed ? 'close' : 'open');
+  accessory.log('Target state: ' + targetState);
 
   command (
     function (err, result) {

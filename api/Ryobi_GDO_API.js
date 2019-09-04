@@ -30,10 +30,11 @@ This is an API to control the Ryobi_GDO_API.This is built upon the work of other
 
 
 class Ryobi_GDO_API {
-    constructor(email, password, deviceid, log, debug) {
+    constructor(email, password, deviceid, Characteristic, log, debug) {
         this.email = email;
         this.password = password;
         this.deviceid = deviceid;
+        this.Characteristic = Characteristic;
         this.log = log;
         this.debug = debug;
     }
@@ -121,22 +122,22 @@ class Ryobi_GDO_API {
     
 
     parseReport(values) {
-        let gdoState;
+        let homekit_doorstate;
         
 		var doorval = values.result[0].deviceTypeMap.garageDoor_7.at.doorState.value
 
 		if (doorval === 0) {
-			gdoState = "CLOSED";
+			homekit_doorstate = this.Characteristic.CurrentDoorState.CLOSED;
 		} else if (doorval === 1) {
-			gdoState = "OPEN";
+			homekit_doorstate = this.Characteristic.CurrentDoorState.OPEN;
 		} else if (doorval === 2) {
-			gdoState = "CLOSING";
+			homekit_doorstate = this.Characteristic.CurrentDoorState.CLOSING;
 		} else {
-			gdoState = "OPENING";
+			homekit_doorstate = this.Characteristic.CurrentDoorState.OPENING;
 		}
-
-		this.debug("GARAGEDOOR STATE:"+ gdoState)
-        return gdoState;
+		
+		this.debug("GARAGEDOOR STATE:"+ homekit_doorstate)
+        return homekit_doorstate;
     }
     
     getState(callback) {
