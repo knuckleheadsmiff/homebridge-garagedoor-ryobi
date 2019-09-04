@@ -1,13 +1,17 @@
-# homebridge-garagedoor-command
-[Homebridge](https://github.com/nfarina/homebridge) plugin that supports triggering commands to check state, open, and close a garage door.
+# homebridge-garagedoor-ryobi
+
+[Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
+
+This work is based on work from https://yannipang.com/blog/ryobi-garage-door-api/ and project is forked from the [homebridge-garagedoor-command](https://github.com/apexad/homebridge-garagedoor-command) plugin
 
 ## Installation
 
 1. Install homebridge using: `npm install -g homebridge`
 2. Install this plugin using: `npm install -g homebridge-garagedoor-command`
-3. Update your configuration file. See the sample below.
+3. Install this plugin using: `npm install -g ws` //websockets
+4. Update your configuration file. See the sample below.
 
-## Configuration
+## Configuration\
 
 Configuration sample:
 
@@ -16,9 +20,9 @@ Configuration sample:
   {
     "accessory": "GarageCommand",
     "name": "Garage Door",
-    "open": "./open.sh",
-    "close": "./close.sh",
-    "state": "./check_state.sh",
+    "email" :  "EMAIL",
+    "password" : "PASSWORD",
+    "garagedoor_id" : "GARAGEDOOR_ID",
     "status_update_delay": 15,
     "poll_state_delay": 20
   }
@@ -31,17 +35,27 @@ Field                   | Description
 ------------------------|------------
 **accessory**           | Must always be "GarageCommand". (required)
 **name**                | Name of the Garage Door
-**open**                | open command. Examples: `./open.sh` or `node open.js` (required)
-**close**               | close command. Examples: `./close.sh` or `node close.js` (required)
-**state**               | state command.  Examples: `./check_state.js` or `node state.js` (required)
+**email** 				| email associate with your garage doors ryobi account (required) 
+**password**			| apiKey associate with your garage doors ryobi account (required)
+**garagedoor_id**		| deviceID your garage doors -- see below (required)
 **status_update_delay** | Time to have door in opening or closing state (defaults to 15 seconds)
 **poll_state_delay**    | Time between polling for the garage door's state (leave blank to disable state polling)
 
-The open, close, and state commands must return the following verbs: OPEN, CLOSED, OPENING, CLOSING.
+## Fetch garagedoor_id
+
+In a Browser (easiest using FireFox because it formats the result) execute:
+
+`https://tti.tiwiconnect.com/api/devices?username=RYOBI_ACCOUNT_EMAIL&RYOBI_PASSORD`
+
+You will get an array of results, if you have only 1 device (like me) look at `result[0]._id` That value is near the beginning out the result.
+Also the device type should be `gdoMasterUnit`. If you have only 1 device (like me) look at `result[0].deviceTypeIds[0]`
+
+You should be able to pick a different ID if you have multiple openers in your account.
 
 ## FAQ
-### Can I have multiple garage doors?
-Yes! but this is a feature of homebridge, not the plugin.  Just add an additonal accessory with a different name than your other garage door.
 
-### Can you add 'x' feature?
-Yes, I probably could.  Will I?  Probably not.  If there is a feature you want to add, please feel free to code it yourself and submit a pull request so others can benefit.
+### Can I have multiple garage doors?
+I currently have no plan to update with multiple garage doors which is why I allow you to specify the one you want to use with the device ID. Fell free to folk this branch to add support for multiple GDOs.### Can I have multiple garage doors?
+
+### Why use a password and not an apiKey?
+A password is unfortunately required to get the open/close state of the garage door. Otherwise I could have provided instructions to fetch an API key to use--which the code internally does to execute open and close commands. If someone knows a a command using an API key to get the state please let me know and I'll update the code.

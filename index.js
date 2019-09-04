@@ -2,20 +2,26 @@ var Service;
 var Characteristic;
 var exec = require('child_process').exec;
 
+const ryobi_GDO_API = require('./api/Ryobi_GDO_API').Ryobi_GDO_API;
+
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
-  homebridge.registerAccessory('homebridge-garagedoor-command', 'GarageCommand', GarageCmdAccessory);
+  homebridge.registerAccessory('homebridge-garagedoor-ryobi', 'RyobiGarageCommand', GarageCmdAccessory);
 };
 
 function GarageCmdAccessory(log, config) {
   this.log = log;
   this.name = config.name;
-  this.openCommand = config.open;
-  this.closeCommand = config.close;
-  this.stateCommand = config.state;
+  
+  this.ryobi_email = config.email;
+  this.ryobi_password = config.password;
+  this.ryobi_device_id = config.garagedoor_id;
+  
   this.statusUpdateDelay = config.status_update_delay || 15;
   this.pollStateDelay = config.poll_state_delay || 0;
+  
+  this.garagedoor = new ryobi_GDO_API(this.ryobi_email, this.ryobi_password, this.ryobi_device_id, this.log);
 }
 
 GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
@@ -26,28 +32,19 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
   }
 
   var accessory = this;
+  var command = isClosed ? accessory.garagedoor.closeDoor : accessory.garagedoor.openDoor;
+  
   var state = isClosed ? 'close' : 'open';
-  var prop = state + 'Command';
-  var command = accessory[prop];
-  accessory.log('Commnand to run: ' + command);
+  accessory.log('Command to run: ' + isClosed ? 'close' : 'open');
 
-  exec(
-    command,
-    {
-      encoding: 'utf8',
-      timeout: 10000,
-      maxBuffer: 200*1024,
-      killSignal: 'SIGTERM',
-      cwd: null,
-      env: null
-    },
-    function (err, stdout, stderr) {
+  command (
+    function (err, result) {
       if (err) {
         accessory.log('Error: ' + err);
         callback(err || new Error('Error setting ' + accessory.name + ' to ' + state));
       } else {
         accessory.log('Set ' + accessory.name + ' to ' + state);
-        if (stdout.indexOf('OPENING') > -1) {
+        if (isClosed) {
           accessory.garageDoorService.setCharacteristic(Characteristic.CurrentDoorState, Characteristic.CurrentDoorState.OPENING);
           setTimeout(
             function() {
@@ -55,7 +52,7 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
             },
             accessory.statusUpdateDelay * 1000
           );
-        } else if (stdout.indexOf('CLOSING') > -1) {
+        } else {
           accessory.garageDoorService.setCharacteristic(Characteristic.CurrentDoorState, Characteristic.CurrentDoorState.CLOSING);
           setTimeout(
             function() {
@@ -66,7 +63,7 @@ GarageCmdAccessory.prototype.setState = function(isClosed, callback, context) {
         }
        callback(null);
      }
-  });
+  }.bind(this));
 };
 
 GarageCmdAccessory.prototype.getState = function(callback) {

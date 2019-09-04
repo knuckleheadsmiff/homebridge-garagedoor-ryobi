@@ -1,23 +1,26 @@
 {
-  "name": "homebridge-garagedoor-command",
-  "version": "0.2.0",
-  "description": "Garage Door plugin for homebridge: https://github.com/nfarina/homebridge",
+  "name": "homebridge-garagedoor-ryobi",
+  "version": "0.1.0",
+  "description": "Ryobi Garage Door plugin for homebridge: https://github.com/nfarina/homebridge",
   "license": "ISC",
   "keywords": [
     "homebridge-plugin",
     "garage",
-    "garage-door"
+    "garage-door",
+    "ryobi"
   ],
   "engines": {
     "node": ">=0.12.0",
     "homebridge": ">=0.2.0"
   },
   "author": {
-    "name": "Alex 'apexad' Martin"
+    "name": "Russ Sonnenschein"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/apexad/homebridge-garagedoor-command.git"
+    "url": "git://github.com/knuckleheadsmiff/homebridge-garagedoor-ryobi.git"
   },
-  "dependencies": {}
+  "dependencies": {
+      "ws": "^7.1.2"
+  }
 }
