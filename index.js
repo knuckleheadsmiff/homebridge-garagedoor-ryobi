@@ -3,7 +3,7 @@ var Characteristic;
 var exec = require('child_process').exec;
 
 const ryobi_GDO_API = require('./api/Ryobi_GDO_API').Ryobi_GDO_API;
-const debug = require('debug')('homebridge-garagedoor-ryobi'),
+const debug = require('debug')('homebridge-garagedoor-ryobi');
 
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
@@ -42,7 +42,7 @@ function GarageCmdAccessory(log, config) {
   this.statusUpdateDelay = config.status_update_delay || 15;
   this.pollStateDelay = config.poll_state_delay || 0;
   
-  this.garagedoor = new ryobi_GDO_API(this.ryobi_email, this.ryobi_password, this.ryobi_device_id, Characteristic, this.log, this.debug);
+  this.garagedoor = new ryobi_GDO_API(this.ryobi_email, this.ryobi_password, this.ryobi_device_id, this.log, this.debug);
 }
 
 GarageCmdAccessory.prototype.setState = function(targetState, callback, context) {
@@ -53,7 +53,7 @@ GarageCmdAccessory.prototype.setState = function(targetState, callback, context)
   }
 
   var accessory = this;
-  var command = (targetState == Characteristic.CurrentDoorState.CLOSED) ? accessory.garagedoor.closeDoor : accessory.garagedoor.openDoor;
+  var command = (targetState == Characteristic.CurrentDoorState.CLOSED) ? accessory.garagedoor.closeDoor.bind(accessory.garagedoor) : accessory.garagedoor.openDoor.bind(accessory.garagedoor);
   
   accessory.log('Target state: ' + targetState);
 
@@ -83,13 +83,13 @@ GarageCmdAccessory.prototype.setState = function(targetState, callback, context)
         }
        callback(null); // return null if no error.
      }
-  }.bind(accessory.garagedoor));
+  });
 };
 
 GarageCmdAccessory.prototype.getState = function(callback) {
   var accessory = this;
 
-  accessory.garagedoor.getStatus (
+  accessory.garagedoor.update (
   	function (err, state) {
 		if (err) {
 		  accessory.log('Error: ' + err);
