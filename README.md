@@ -2,6 +2,10 @@
 
 ## NOT WORKING YET: DO NOT USE
 
+It's limping along. Can open and close! But the state gets whacked and not reset. So need to work on that.
+
+I also log lots of sensitive data--not my fault, the server responses but it in the results all over the place and to debug you need to see the server responses. I will add a conf setting so that if someone runs in debug mode that by default no sensitive info gets logged, but that can be overridden in the conf file if I need to look into an issue.
+
 
 [Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
 
