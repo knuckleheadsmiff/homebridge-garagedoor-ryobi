@@ -51,6 +51,7 @@ class Ryobi_GDO_API {
 				
 				try {
 					this.apikey = jsonObj.result.auth.apiKey;
+					this.debug("apiKey: "+ this.apikey);
 					callback(null, this.apikey);
 				} catch(error) {
 					this.debug("Error retrieving ryobi GDO apiKey");
@@ -82,9 +83,10 @@ class Ryobi_GDO_API {
 			
 				try {
 					var deviceModel = jsonObj.result[0].deviceTypeIds[0];
-					var doorid = (deviceModel == 'gda500hub') ? jsonObj.result[1].varName : jsonObj.result[0].varName;
-					this.debug("doorid: " + doorid);
-					callback(null, doorid);
+					this.deviceid = (deviceModel == 'gda500hub') ? jsonObj.result[1].varName : jsonObj.result[0].varName;
+					this.debug("deviceModel: " + deviceModel);
+					this.debug("doorid: " + this.deviceid);
+					callback(null, this.deviceid);
 				} catch(error) {
 					this.debug("Error retrieving ryobi GDO getDeviceID");
 					this.debug("Error Message 1: " + error);
@@ -160,45 +162,61 @@ class Ryobi_GDO_API {
         return homekit_doorstate;
     }
     
-    sendWebsocketCommand(message, callback) {
+    sendWebsocketCommand(message, callback, state) {
 		this.debug("GARAGEDOOR sendWebsocketcommand");
+		var doorState = state;
 		
 		var doIt = function(apiKey, doorid) {
 			try {
+				this.debug("GARAGEDOOR sendWebsocketcommand: doIt");
+				var debug = this.debug;
 				const ws = new WebSocket(websocketURL);
 
 				ws.on('open', function open() {
 					// Web Socket is connected, send data using send()
-					var openConnection = '{"jsonrpc":"2.0","id":3,"method":"srvWebSocketAuth","params": {"varName": "'+ this.email + '": "'+ apiKey +'"}}';
+					var openConnection = '{"jsonrpc":"2.0","id":3,"method":"srvWebSocketAuth","params": {"varName": "'+ this.email + '", "apiKey": "'+ apiKey +'"}}';
  /* INSECURE TO WRITE TO LOG ==>*/ this.debug("GARAGEDOOR sendWebsocketcommand: " + openConnection);
 					ws.send(openConnection); //CHANGE VARIABLES
 				}.bind(this));
 
 				ws.on('message', function incoming(data) {
-					var sendMessage = '{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":"'+message+'","topic":"'+ doorid +'"}}';
- /* INSECURE TO WRITE TO LOG ==>*/ this.debug("GARAGEDOOR sendWebsocketmessage: " + sendMessage);
-					ws.send(sendMessage); 
-					ws.ping();
+					debug("open socket message: " + data)
+					//Getting multiple messages!
+					//    message: {"jsonrpc":"2.0","method":"authorizedWebSocket","params":{"authorized":true,"socketId":"b82879e8.ip-172-31-23-253.4008"}} +74ms
+  					//	  message: {"jsonrpc":"2.0","result":{"authorized":true,"varName":"xxxxxxxxxxxx","aCnt":0},"id":3} +4ms
+  					// Need to send AFTER authorization the 'result.'
+  					var returnObj =  JSON.parse(data);
+  					if (returnObj.result) {
+  						if (returnObj.result.authorized) {
+							var sendMessage = '{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg": '+message+',"topic":"'+ doorid +'"}}';
+/* INSECURE TO WRITE TO LOG ==>*/ this.debug("GARAGEDOOR sendWebsocketmessage: " + sendMessage);
+							ws.send(sendMessage); 
+							callback(null, doorState);
+						}
+						ws.ping();
+  					} else {
+  						//no-op waiting for a result to be sent back.
+  					}
 				}.bind(this));
-
+				
 				ws.on('pong', function pong() {
 					ws.terminate();
-				});    
+				});
+
 			} catch(error) {
 				this.debug("Error retrieving ryobi GDO status");
 				this.debug("Error Message: " + error);
 				callback(error);
 			}
-			callback(null, true);
 		}.bind(this);
 		
-		//getting id and key are both asyncsynchronous which is why this odd double callback. The do get cached afer iinitcall and in that case the callback is synchronous
+		//getting id and key are both asyncsynchronous which is why this odd double callback. The do get cached afer initcall and in that case the callback is synchronous
 		this.getDeviceID(function (errorid, deviceid) {
 			if (!errorid) {
 				var doorid = deviceid;
 				this.getApiKey(function (errorkey, apiKey) {
 				if (!errorkey) {
-					doIt(errorkey, doorid);
+					doIt(apiKey, doorid);
 				} else {
 					callback(errorkey);
 				}
@@ -212,12 +230,12 @@ class Ryobi_GDO_API {
     
     openDoor(callback) {
 		this.debug("GARAGEDOOR openDoor");
-		this.sendWebsocketCommand('{"doorCommand":1}' , callback);
+		this.sendWebsocketCommand('{"doorCommand":1}' , callback, "OPENING");
 	}
     
     closeDoor (callback) {
 		this.debug("GARAGEDOOR closeDoor");
-		this.sendWebsocketCommand('{"doorCommand":0}' , callback);
+		this.sendWebsocketCommand('{"doorCommand":0}' , callback, "CLOSING");
 	}
 
 }

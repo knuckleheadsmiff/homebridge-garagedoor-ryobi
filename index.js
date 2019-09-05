@@ -58,13 +58,13 @@ GarageCmdAccessory.prototype.setState = function(targetState, callback, context)
   accessory.log('Target state: ' + targetState);
 
   command (
-    function (err, result) {
+    function (err, state) {
       if (err) {
         accessory.log('Error: ' + err);
         callback(err || new Error('Error setting state to ' + state));
       } else {
         accessory.log('Set ' + accessory.name + ' to ' + state);
-        if (isClosed) {
+        if (targetState == Characteristic.CurrentDoorState.CLOSED) {
           accessory.garageDoorService.setCharacteristic(Characteristic.CurrentDoorState, Characteristic.CurrentDoorState.OPENING);
           setTimeout(
             function() {
