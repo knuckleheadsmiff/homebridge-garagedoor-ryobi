@@ -39,8 +39,11 @@ class Ryobi_GDO_API {
     }
 
     getApiKey(callback) {
-    	if (this.apikey) return this.apikey;
 		this.debug("getApiKey");
+    	if (this.apikey) {
+			this.debug("apiKey: "+ this.apikey);
+			return callback(null, this.apikey);
+		}
     	
 		var doIt = function (err, response, body) {
  		   this.debug("getApiKey responded");
@@ -71,8 +74,11 @@ class Ryobi_GDO_API {
     }
     
     getDeviceID(callback) {
-		if (this.deviceid) return callback(null, this.deviceid);
 		this.debug("getDeviceID");
+		if (this.deviceid) {
+			this.debug("doorid: " + this.deviceid);
+			return callback(null, this.deviceid);
+		}
 		
 		var doIt = function (err, response, body) {
 			this.debug("getDeviceID responded");
