@@ -34,11 +34,10 @@ Field                   | Description
 **name**                          | Name of the Garage Door (**required**)
 **email** 			   | email associate with your garage doors ryobi account (**required**) 
 **password**	                  | apiKey associate with your garage doors ryobi account (**required**)
-**status_update_delay** | Polling when garage door is opening and closing. recommend 10-20 seconds. Defaukt is 15.  
+**status_update_delay** | Polling (in seconds) while garage door is opening and closing. Default is 15 seconds.  
 **poll_state_delay**        | Time between polling for the garage door's state. This just periodically updates homekits incase your spouse used the remote to open the door.  
-------------------------|------------
-**garagedoor_id**        | id your garage doors, this is the device that gets controlled (**recommend not setting**) see below
-**debug_sensitive**    | Leave set to false (**recommend not setting**) see below.
+**garagedoor_id**        |  (**recommend NOT setting**) Id your garage doors, **see below**
+**debug_sensitive**    |  (**recommend NOT setting**) Leave set to false **see below**.
 
 ## debug_sensitive
 
