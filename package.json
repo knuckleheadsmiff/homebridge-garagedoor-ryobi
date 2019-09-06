@@ -1,6 +1,6 @@
 {
   "name": "homebridge-garagedoor-ryobi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ryobi garagedoor (GDO) pluging for homebridge",
   "main": "index.js",
   "scripts": {
