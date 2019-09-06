@@ -13,6 +13,7 @@
   "keywords": [
     "homekit",
     "homebridge",
+    "homebridge-plugin",
     "GDO",
     "ryobi",
     "garage",
@@ -21,6 +22,10 @@
     "GDO",
     "opener"
   ],
+  "engines": {
+      "node": ">=0.12.0",
+      "homebridge": ">=0.2.0"
+  },
   "author": "Russell Sonnenschein",
   "license": "ISC"
 }
