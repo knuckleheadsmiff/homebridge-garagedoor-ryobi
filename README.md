@@ -2,7 +2,7 @@
 
 ** Almost There**
 
-I need to figure out (1) how to tab/realease. And how to add to the NPM registry. All new to me. Please be patient. 
+I need to figure out (1) how to TAG/RELEASE. And how to add to the NPM registry. All new to me.
 
 [Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
 
