@@ -27,8 +27,8 @@ Configuration sample:
     "name"     : "Garage Door",
     "email"    : "RYOBI_EMAIL",
     "password" : "RYOBI_PASSWORD",
-    "status_update_delay": 15,
-    "poll_state_delay"   : 20
+    "status_update_delay": 10,
+    "poll_state_delay"   : 90
   }
 ]
 
@@ -41,8 +41,8 @@ Field                   | Description
 **name**                          | Name of the Garage Door (**required**)
 **email** 			   | email associate with your garage doors ryobi account (**required**) 
 **password**	                  | apiKey associate with your garage doors ryobi account (**required**)
-**status_update_delay** | Time to have door in opening or closing state (defaults to 15 seconds), Door will transition out of  
-**poll_state_delay**        | Time between polling for the garage door's state-- should be >  0,  
+**status_update_delay** | Polling when garage door is opening and closing. recommend 10-20 seconds. Defaukt is 15.  
+**poll_state_delay**        | Time between polling for the garage door's state. This just periodically updates homekits incase your spouse used the remote to open the door.  
 ------------------------|------------
 **garagedoor_id**        | id your garage doors, this is the device that gets controlled (**recommend not setting**) see below
 **debug_sensitive**    | Leave set to false (**recommend not setting**) see below.
@@ -64,6 +64,10 @@ In a browser (I recommend using FireFox because it automatically formats the jso
 `https://tti.tiwiconnect.com/api/devices?username=RYOBI_ACCOUNT_EMAIL&password=RYOBI_PASSORD`
 
 You will get an array of results, if you have only 1 device (like me) the devide id will be **`result[0].varName`** except if result[0].deviceTypeIds[1] == `gda500hub` then use **`result[1].varName`** .
+
+## Wanted
+
+If you know how to get the current ryobi garage door state with just an API KEY  then I will change the code to use a KEY, DOORID and DEVICE TYPE which you will need to provide (I'll give instructions.) I'd prefer then enhanced security this would have and so would you!
 
 ## Kudos
 
