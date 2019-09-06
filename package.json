@@ -1,11 +1,12 @@
 {
   "name": "homebridge-garagedoor-ryobi",
-  "version": "0.1.1",
+  "version": "0.1.1",  
   "description": "ryobi garagedoor (GDO) pluging for homebridge",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+
   "repository": {
     "type": "git",
     "url": "git://knuckleheadsmiff/homebridge-garagedoor-ryobi"
