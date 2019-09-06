@@ -1,6 +1,14 @@
 # homebridge-garagedoor-ryobi
 
+** Almost There**
+
+I need to figure out (1) how to tab/realease. And how to add to the NPM registry. All new to me. Please be patient. 
+
 [Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
+
+## Known issue
+
+Homekit is sending out a state messages and in par
 
 ## Installation
 
