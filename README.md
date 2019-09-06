@@ -1,13 +1,13 @@
 # homebridge-garagedoor-ryobi
 
+[Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
+
 ## NOT WORKING YET: DO NOT USE
 
 It's limping along. Can open and close! But the state gets whacked and not reset. So need to work on that.
 
-I also log lots of sensitive data--not my fault, the server responses include sensitve data scattered all over the place. To debug you need to see the server responses. I will add a conf setting so that if someone runs homebridge in debug mode that by default no sensitive info gets logged, but that can be overridden in the conf file if I need to look into an issue.
 
 
-[Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
 
 ## Installation
 
@@ -26,7 +26,9 @@ Configuration sample:
     "accessory": "GarageCommand",
     "name"     : "Garage Door",
     "email"    : "RYOBI_EMAIL",
-    "password" : "RYOBI_PASSWORD"
+    "password" : "RYOBI_PASSWORD",
+    "status_update_delay": 15,
+    "poll_state_delay"   : 20
   }
 ]
 
@@ -35,15 +37,23 @@ Configuration sample:
 
 Field                   | Description
 ------------------------|------------
-**accessory**           | Must always be "RyobiGarageCommand". (**required**)
-**name**                | Name of the Garage Door (**required**)
-**email** 				| email associate with your garage doors ryobi account (**required**) 
-**password**			| apiKey associate with your garage doors ryobi account (**required**)
-**garagedoor_id**		| id your garage doors, this is the device that gets controlled (**recommend not setting**) see below
-**status_update_delay** | Time to have door in opening or closing state (defaults to 15 seconds)
-**poll_state_delay**    | Time between polling for the garage door's state (leave blank to disable state polling)
+**accessory**                  | Must always be "RyobiGarageCommand". (**required**)
+**name**                          | Name of the Garage Door (**required**)
+**email** 			   | email associate with your garage doors ryobi account (**required**) 
+**password**	                  | apiKey associate with your garage doors ryobi account (**required**)
+**status_update_delay** | Time to have door in opening or closing state (defaults to 15 seconds), Door will transition out of  
+**poll_state_delay**        | Time between polling for the garage door's state-- should be >  0,  
+------------------------|------------
+**garagedoor_id**        | id your garage doors, this is the device that gets controlled (**recommend not setting**) see below
+**debug_sensitive**    | Leave set to false (**recommend not setting**) see below.
 
-## Fetch garagedoor_id
+## debug_sensitive
+
+I also log lots of sensitive data--not my fault, the server responses include sensitve data scattered. To debug logging the server responses are manditory. The responses contain from the server API keys (yikes!) and DeviceIDs. Currently I can't prevent this because the API I have to get the polling state requires your login and passord--not an api key. This is very unfortunate. A  `debug_sensitive parameter: false`  config parament is available and should normally always be false--the default. You have been warned. Had this not been the case I would have used and `apiKey` rather than your password in the config file.
+
+The sensivite data is ONLY logged when this config setting is true **and** when debugging homebridge itself (when homebridge in debug mode: ` DEBUG=* homebridge -D -P`  .)
+
+## garagedoor_id
 
 **If you leave **garagedoor_id** out the config file the right thing should happen.**
 

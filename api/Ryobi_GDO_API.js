@@ -30,18 +30,19 @@ This is an API to control the Ryobi_GDO_API.This is built upon the work of other
 
 
 class Ryobi_GDO_API {
-    constructor(email, password, deviceid, log, debug) {
+    constructor(email, password, deviceid, log, debug, debug_sensitive) {
         this.email = email;
         this.password = password;
         this.deviceid = deviceid;
         this.log = log;
         this.debug = debug;
+        this.debug_sensitive = debug_sensitive;
     }
 
     getApiKey(callback) {
 		this.debug("getApiKey");
     	if (this.apikey) {
-			this.debug("apiKey: "+ this.apikey);
+			if (this.debug_sensitive) this.debug("apiKey: "+ this.apikey);
 			return callback(null, this.apikey);
 		}
     	
@@ -49,21 +50,20 @@ class Ryobi_GDO_API {
  		   this.debug("getApiKey responded");
            if (!err) {
                 const jsonObj = JSON.parse(body);
-				//debug( JSON.stringify(jsonObj, null, 2));
-				this.debug("body: "+ body);
+				if (this.debug_sensitive) this.debug("body: "+ body);
 				
 				try {
 					this.apikey = jsonObj.result.auth.apiKey;
-					this.debug("apiKey: "+ this.apikey);
+					if (this.debug_sensitive) this.debug("apiKey: "+ this.apikey);
 					callback(null, this.apikey);
 				} catch(error) {
-					this.debug("Error retrieving ryobi GDO apiKey");
-					this.debug("Error Message 1: " + error);
+					this.log("Error getApiKey 1 -  retrieving ryobi GDO apiKey");
+					this.log("Error  getApiKey - Message: " + error);
 					callback(error);
 				}
             } else {
-                this.debug("Error retrieving ryobi GDO apiKey");
-                this.debug("Error Message 2: " + err);
+                this.log("Error  getApiKey 2 - retrieving ryobi GDO apiKey");
+                this.log("Error  getApiKey - Message: " + err);
 				callback(err);
             }
         }.bind(this);
@@ -76,7 +76,7 @@ class Ryobi_GDO_API {
     getDeviceID(callback) {
 		this.debug("getDeviceID");
 		if (this.deviceid) {
-			this.debug("doorid: " + this.deviceid);
+			if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
 			return callback(null, this.deviceid);
 		}
 		
@@ -84,23 +84,22 @@ class Ryobi_GDO_API {
 			this.debug("getDeviceID responded");
 			if (!err) {
 				const jsonObj = JSON.parse(body);
-				//this.debug("getDeviceID response = " + body);
-				this.debug("body: "+ body);
+				if (this.debug_sensitive) this.debug("body: "+ body);
 			
 				try {
 					var deviceModel = jsonObj.result[0].deviceTypeIds[0];
 					this.deviceid = (deviceModel == 'gda500hub') ? jsonObj.result[1].varName : jsonObj.result[0].varName;
-					this.debug("deviceModel: " + deviceModel);
-					this.debug("doorid: " + this.deviceid);
+					if (this.debug_sensitive) this.debug("deviceModel: " + deviceModel);
+					if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
 					callback(null, this.deviceid);
 				} catch(error) {
-					this.debug("Error retrieving ryobi GDO getDeviceID");
-					this.debug("Error Message 1: " + error);
+					this.log("Error getDeviceID 1 - retrieving ryobi GDO getDeviceID");
+					this.log("Error getDeviceID - Message: " + error);
 					callback(error);
 				}
 			} else {
-				this.debug("Error retrieving ryobi GDO getDeviceID");
-				this.debug("Error Message 2: " + err);
+				this.log("Error getDeviceID 2 - retrieving ryobi GDO getDeviceID");
+				this.log("Error getDeviceID - Message: " + err);
 				callback(err);
 			}
 		}.bind(this);
@@ -126,20 +125,19 @@ class Ryobi_GDO_API {
 				this.debug("GetStatus responded: ");
 				if (!err) {
 					const jsonObj = JSON.parse(body);
-					//this.debug( JSON.stringify(jsonObj, null, 2));
-					this.debug("body: "+ body);
+					if (this.debug_sensitive) this.debug("body: "+ body);
 				
 					try {
 						var state = this.parseReport(jsonObj, callback);
 						callback(null, state);
 					} catch(error) {
-						this.debug("Error retrieving ryobi GDO status");
-						this.debug("Error Message 1: " + error);
+						this.log("Error update 1 - retrieving ryobi GDO status");
+						this.log("Error Message: " + error);
 						callback(error);
 					}
 				} else {
-					this.debug("Error retrieving ryobi GDO status");
-					this.debug("Error Message 2: " + err);
+					this.log("Error update 2 - retrieving ryobi GDO status");
+					this.log("Error Message: " + err);
 					callback(err);
 				}
 			}.bind(this));
@@ -181,7 +179,7 @@ class Ryobi_GDO_API {
 				ws.on('open', function open() {
 					// Web Socket is connected, send data using send()
 					var openConnection = '{"jsonrpc":"2.0","id":3,"method":"srvWebSocketAuth","params": {"varName": "'+ this.email + '", "apiKey": "'+ apiKey +'"}}';
- /* INSECURE TO WRITE TO LOG ==>*/ this.debug("GARAGEDOOR sendWebsocketcommand: " + openConnection);
+ 					if (this.debug_sensitive) this.debug("GARAGEDOOR sendWebsocketcommand: " + openConnection);
 					ws.send(openConnection); //CHANGE VARIABLES
 				}.bind(this));
 
@@ -195,7 +193,7 @@ class Ryobi_GDO_API {
   					if (returnObj.result) {
   						if (returnObj.result.authorized) {
 							var sendMessage = '{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg": '+message+',"topic":"'+ doorid +'"}}';
-/* INSECURE TO WRITE TO LOG ==>*/ this.debug("GARAGEDOOR sendWebsocketmessage: " + sendMessage);
+							if (this.debug_sensitive) this.debug("GARAGEDOOR sendWebsocketmessage: " + sendMessage);
 							ws.send(sendMessage); 
 							callback(null, doorState);
 						}
@@ -210,7 +208,7 @@ class Ryobi_GDO_API {
 				});
 
 			} catch(error) {
-				this.debug("Error retrieving ryobi GDO status");
+				this.debug("Error sending sendWebsocketCommand");
 				this.debug("Error Message: " + error);
 				callback(error);
 			}
