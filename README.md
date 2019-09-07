@@ -44,12 +44,12 @@ Field                   | Description
 **password**	                  | password associate with your garage doors ryobi account  -- **required**
 **status_update_delay** | Polling status (in seconds) while garage door is opening and closing. Default is 15 seconds.  
 **poll_state_delay**        | Time between polling for the garage door's state. This just periodically updates homekit incase your spouse used the remote to open the door.  
-**garagedoor_id**        |  (**recommend NOT setting**) Id your garage doors, **see below**
-**debug_sensitive**    |  (**recommend NOT setting**) Leave set to false **see below**.
+**garagedoor_id**        |  (**recommend NOT setting**) defaults correctly, **see below**
+**debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
 
 ## debug_sensitive
 
-I also log lots of sensitive data--not my fault, the server responses include sensitve data scattered. To debug logging the server responses are manditory. The responses contain from the server API keys (yikes!) and DeviceIDs. Currently I can't prevent this because the API I have to get the polling state requires your login and passord--not an api key. This is very unfortunate. A  `debug_sensitive parameter: false`  config parament is available and should normally always be false--the default. You have been warned. Had this not been the case I would have used and `apiKey` rather than your password in the config file.
+To debug server requests/responses I need to log lots of sensitive data--not my fault, the server responses include sensitve data scattered. The responses contain from the server Account Names, API keys, and DeviceIDs. You don't want this scatered in homebridge log files on your machine or mailed to other folks that need your homebridge log files for other reasons. Currently I can't prevent this because the API I have to get the the door state requires your login and passord--not an api key. This is very unfortunate. A  `debug_sensitive parameter`  config parament is available and should normally always be false--the default. You have been warned. Had this not been the case I would have used and `apiKey` and the `deviceid` rather than your password in the config file.
 
 The sensivite data is ONLY logged when this config setting is true **and** when debugging homebridge itself (when homebridge in debug mode: ` DEBUG=* homebridge -D -P`  .)
 
