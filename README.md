@@ -8,7 +8,7 @@ I would REFRAIN from using for now becase the status is not updating correctly f
 
 ## Arrrrrrgggghhhhhhhh!!! 
 
-*My "home" app gets into a hosed situation where it says  is not getting `no response` although it initially shows the correct state--I can use the controls and everything looks like it is responding. Sometimes the HomeBridge accessory disappears too. Sometiomes I can't add a new HomeBridge accessory.....   I've had to delete my homebridge, rename it, give it a new ID, delete 'my home',  throw out the homebridge caches.... Oh, and now I find I have to restart my router to fix issues! Oh even better I had to turn toggle off/on the keychain for my home to show correctly on all my devices--ip 6 issues? (I'm on a mac!) This is a huge impact on my development. Driving me nuts.*
+*My "home" app gets into a hosed situation where it says  " `no response`" although it initially shows the correct state--I can use the controls and everything looks like it is responding. Sometimes the HomeBridge accessory disappears too. Sometiomes I can't add a new HomeBridge accessory.....   I've had to delete my homebridge, rename it, give it a new ID, delete 'my home',  throw out the homebridge caches.... Oh, and now I find I have to restart my router to fix issues! Oh even better I had to turn toggle off/on the keychain for my home to show correctly on all my devices--ip 6 issues? (I'm on a mac!) This is a huge impact on my development. Driving me nuts.*
 
 ## Installation
 
