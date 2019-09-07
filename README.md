@@ -6,7 +6,7 @@
 
 I would REFRAIN from using for now becase the status is not updating correctly for me always. I need to look into this more. Eventually it gets reset correctly using the `polling_state_delay`. This issue has something to do with telling the door to open/close but then not reporting back the opening/closing state but the initial state. As an asside, the home app seems more buggy than the Eve app for working on this. 
 
-My "home" app gets into a hosed situation where it says it is not getting `no response` when though it initially shows the correct state and I can use the controls and every thing looks like it is responding? The eve app seems to be working correctly. Making development a pain. I've had to delete my homebridge hub, rename it, give it a new ID, delete 'my home' or throw out the hoime bridge caches many times. Driving me nuts.
+*My "home" app gets into a hosed situation where it says  is not getting `no response` although it initially shows the correct state. I can use the controls and every thing looks like it is responding? The eve app seems to be working correctly. Making development a pain. I've had to delete my homebridge hub, rename it, give it a new ID, delete 'my home' or throw out the home bridge caches.... Oh, and now I find I have to restart my router to fix issues! Oh and now I had a but where I have to turn toggle off/on the keychain for the bridge device to be seen again--ip 6 issues? (I'm on a mac!) This is a huge impact on my development. Driving me nuts.*
 
 ## Installation
 

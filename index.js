@@ -95,7 +95,11 @@ GarageCmdAccessory.prototype.getState = function(callback) {
 		  accessory.log('Error: ' + err);
 		  callback(err || new Error('Error getting state of ' + accessory.name));
 		} else {
-		  accessory.log('State of ' + accessory.name + ' is: ' + state);
+		  if (accessory.lastStateSeen != state) {
+		  		//what to log any change;
+		  		accessory.log('State of ' + accessory.name + ' is: ' + state);
+		  }
+		  accessory.lastStateSeen = state;
 		  this.debug('State of Characteristic.CurrentDoorState[state] is: ' + Characteristic.CurrentDoorState[state]);
 		  callback(null, Characteristic.CurrentDoorState[state]);
 		}
