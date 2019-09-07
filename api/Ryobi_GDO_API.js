@@ -49,8 +49,8 @@ class Ryobi_GDO_API {
 		var doIt = function (err, response, body) {
  		   this.debug("getApiKey responded");
            if (!err) {
-                const jsonObj = JSON.parse(body);
 				if (this.debug_sensitive) this.debug("body: "+ body);
+                const jsonObj = JSON.parse(body);
 				
 				try {
 					this.apikey = jsonObj.result.auth.apiKey;
@@ -83,8 +83,8 @@ class Ryobi_GDO_API {
 		var doIt = function (err, response, body) {
 			this.debug("getDeviceID responded");
 			if (!err) {
-				const jsonObj = JSON.parse(body);
 				if (this.debug_sensitive) this.debug("body: "+ body);
+				const jsonObj = JSON.parse(body);
 			
 				try {
 					var deviceModel = jsonObj.result[0].deviceTypeIds[0];
@@ -124,8 +124,8 @@ class Ryobi_GDO_API {
 			request(encodeURI(queryUri), function (err, response, body) {
 				this.debug("GetStatus responded: ");
 				if (!err) {
-					const jsonObj = JSON.parse(body);
 					if (this.debug_sensitive) this.debug("body: "+ body);
+					const jsonObj = JSON.parse(body);
 				
 					try {
 						var state = this.parseReport(jsonObj, callback);
@@ -184,7 +184,7 @@ class Ryobi_GDO_API {
 				}.bind(this));
 
 				ws.on('message', function incoming(data) {
-					debug("open socket message: " + data)
+					if (this.debug_sensitive)  debug("open socket message: " + data)
 					//Getting multiple messages!
 					//    message: {"jsonrpc":"2.0","method":"authorizedWebSocket","params":{"authorized":true,"socketId":"b82879e8.ip-172-31-23-253.4008"}} +74ms
   					//	  message: {"jsonrpc":"2.0","result":{"authorized":true,"varName":"xxxxxxxxxxxx","aCnt":0},"id":3} +4ms
