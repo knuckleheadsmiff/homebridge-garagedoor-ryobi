@@ -1,14 +1,12 @@
 # homebridge-garagedoor-ryobi
 
-** Almost There**
-
-I need to figure out (1) how to TAG/RELEASE. And how to add to the NPM registry. All new to me.
-
 [Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
 
-## Known issue
+## IMPORTANT: Known issue
 
-Homekit is sending out a state messages and in par
+I would REFRAIN from using for now becase the status is not updating correctly for me always. I need to look into this more. Eventually it gets reset correctly using the `polling_state_delay`. This issue has something to do with telling the door to open/close but then not reporting back the opening/closing state but the initial state. As an asside, the home app seems more buggy than the Eve app for working on this. 
+
+My "home" app gets into a hosed situation where it says it is not getting `no response` when though it initially shows the correct state and I can use the controls and every thing looks like it is responding? The eve app seems to be working correctly. Making development a pain. I've had to delete my homebridge hub, rename it, give it a new ID, delete 'my home' or throw out the hoime bridge caches many times. Driving me nuts.
 
 ## Installation
 
@@ -28,7 +26,7 @@ Configuration sample:
     "name"     : "Garage Door",
     "email"    : "RYOBI_EMAIL",
     "password" : "RYOBI_PASSWORD",
-    "status_update_delay": 10,
+    "status_update_delay": 15,
     "poll_state_delay"   : 90
   }
 ]
@@ -43,7 +41,7 @@ Field                   | Description
 **email** 			   | email associate with your garage doors ryobi account -- **required** 
 **password**	                  | password associate with your garage doors ryobi account  -- **required**
 **status_update_delay** | Polling status (in seconds) while garage door is opening and closing. Default is 15 seconds.  
-**poll_state_delay**        | Time between polling for the garage door's state. This just periodically updates homekits incase your spouse used the remote to open the door.  
+**poll_state_delay**        | Time between polling for the garage door's state. This just periodically updates homekit incase your spouse used the remote to open the door.  
 **garagedoor_id**        |  (**recommend NOT setting**) Id your garage doors, **see below**
 **debug_sensitive**    |  (**recommend NOT setting**) Leave set to false **see below**.
 

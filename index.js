@@ -131,7 +131,7 @@ GarageCmdAccessory.prototype.pollState = function(isOpeningOrClosing) {
 				accessory.garageDoorService.setCharacteristic(Characteristic.CurrentDoorState, currentDeviceState);
 				accessory.stateTimer = setTimeout(doIt, this.poll_state_delay); 
 		   } else {
-				accessory.stateTimer = setTimeout(doIt, this.status_update_delay);  // call back sooner if opening/closing
+				accessory.stateTimer = setTimeout(doIt, this.status_update_delay);
 		   }
 		   
 		 }.bind(this))
