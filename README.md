@@ -38,12 +38,12 @@ Configuration sample:
 
 Field                   | Description
 ------------------------|------------
-**accessory**                  | Must always be "RyobiGarageCommand" -- **required**
-**name**                          | Name of the Garage Door  -- **required**
-**email** 			   | email associate with your garage doors ryobi account -- **required** 
-**password**	                  | password associate with your garage doors ryobi account  -- **required**
-**status_update_delay** | Polling status (in seconds) while garage door is opening and closing. Default is 15 seconds.  
-**poll_state_delay**        | Time between polling for the garage door's state. This just periodically updates homekit incase your spouse used the remote to open the door.  
+**accessory**                  | (**required**) Must be "RyobiGarageCommand" 
+**name**                          | (**required**) Pick the defaukt garage door name for the home app
+**email** 			   | (**required**) email associate with your garage doors ryobi account 
+**password**	                  | (**required**) password associate with your garage doors ryobi account 
+**status_update_delay** | (**Default is 15 seconds** ) Polling status (in seconds) while garage door is opening and closing.  
+**poll_state_delay**        | (**Default is 15 seconds** ) Time between polling for the garage door's state.  Needed to uodate the home up if the door is controled by other people, remotes, physical buttons... 
 **garagedoor_id**        |  (**recommend NOT setting**) defaults correctly, **see below**
 **debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
 
