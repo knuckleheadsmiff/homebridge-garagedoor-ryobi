@@ -61,18 +61,21 @@ You will get an array of results, if you have only 1 device (like me) the devide
 
 ## homebridge log entries:
 
-In the normal course of running you will see the log stuff like this. 
-
-
+In the normal course of running you will see the log stuff like this (with out the  `^^^^^`  comments.). 
 
         [9/8/2019, 12:33:45 PM] Homebridge is running on port 51826.
-        [9/8/2019, 12:33:59 PM] [Garage Door] State of Garage Door is: OPEN     << initial state set from polling
-        [9/8/2019, 12:34:12 PM] [Garage Door] Set Garage Door to 1              << in the ehome app closed the door
-        [9/8/2019, 12:34:27 PM] [Garage Door] State of Garage Door is: CLOSING  << using the **poll_short_delay** detected door is closing
-        [9/8/2019, 12:34:43 PM] [Garage Door] State of Garage Door is: CLOSED   << using the **poll_short_delay** detected door is closed
-        [9/8/2019, 12:40:49 PM] [Garage Door] State of Garage Door is: OPEN     <<I manually press the garage door opened not in the
-                                                                                    home app,  using the **poll_short_delay** detected 
-                                                                                    door is closed
+        [9/8/2019, 12:33:59 PM] [Garage Door] State of Garage Door is: OPEN
+                   ^^^^^  initial state set from polling
+        [9/8/2019, 12:34:12 PM] [Garage Door] Set Garage Door to 1 
+                   ^^^^^  Using the iOS home app I closed the door
+        [9/8/2019, 12:34:27 PM] [Garage Door] State of Garage Door is: CLOSING
+                   ^^^^^  using the **poll_short_delay** detected door is closing
+        [9/8/2019, 12:34:43 PM] [Garage Door] State of Garage Door is: CLOSED 
+                   ^^^^^  using the **poll_short_delay** detected door is closed
+        [9/8/2019, 12:40:49 PM] [Garage Door] State of Garage Door is: OPEN 
+                   ^^^^^  I manually press the garage door opened not in the
+                   ^^^^^  home app,  using the **poll_short_delay** detected 
+                   ^^^^^  door is closed
 
 ## Security concerns and help wanted
 
