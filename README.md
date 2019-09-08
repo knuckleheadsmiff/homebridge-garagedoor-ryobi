@@ -27,9 +27,7 @@ Configuration sample:
     "accessory": "RyobiGarageCommand",
     "name"     : "Garage Door",
     "email"    : "RYOBI_EMAIL",
-    "password" : "RYOBI_PASSWORD",
-    "status_update_delay": 15,
-    "poll_state_delay"   : 90
+    "password" : "RYOBI_PASSWORD"
   }
 ]
 
@@ -42,8 +40,8 @@ Field                   | Description
 **name**                          | (**required**) Pick the defaukt garage door name for the home app
 **email** 			   | (**required**) email associate with your garage doors ryobi account 
 **password**	                  | (**required**) password associate with your garage doors ryobi account 
-**status_update_delay** | (**Default is 15 seconds** ) Polling status (in seconds) while garage door is opening and closing.  
-**poll_state_delay**        | (**Default is 15 seconds** ) Time between polling for the garage door's state.  Needed to uodate the home up if the door is controled by other people, remotes, physical buttons... 
+**poll_short_delay**         | (**Default is 15 seconds** ) Polling status (in seconds) while garage door is opening and closing. Min value 15;  
+**poll_long_delay**          | (**Default is 90 seconds** ) Time between polling for the garage door's state.  Outside of opening and closing. Min value >= poll_short_delay;
 **garagedoor_id**        |  (**recommend NOT setting**) defaults correctly, **see below**
 **debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
 
@@ -52,6 +50,11 @@ Field                   | Description
 To debug server requests/responses I need to log lots of sensitive data--not my fault, the server responses include sensitve data scattered. The responses contain from the server Account Names, API keys, and DeviceIDs. You don't want this scatered in homebridge log files on your machine or mailed to other folks that need your homebridge log files for other reasons. Currently I can't prevent this because the API I have to get the the door state requires your login and passord--not an api key. This is very unfortunate. A  `debug_sensitive parameter`  config parament is available and should normally always be false--the default. You have been warned. Had this not been the case I would have used and `apiKey` and the `deviceid` rather than your password in the config file.
 
 The sensivite data is ONLY logged when this config setting is true **and** when debugging homebridge itself: ` DEBUG=* homebridge -D -P`
+
+## poll_short_delay and poll_long_delay
+After setting sendong the opening/closing command to ryobi, it rill returning the original state for the next 0-13 seconds. When I get the state back I actually can't tell if the door is infact remainging in the original state because of a problem or just hasent starting opening yet (and in fact it may already be in the desired state.)  The code will work OK but the result of this is that the short poll delay thinks it is no longer needed and goes into long polling mode which will eventually fix the door state. So I set a min 15 seconds on the short delay to fix this. The code that I forked from just slammed the sate to the final state to get around this, I thought that was wrong, I'd rather leave the state as opening/closing until I really know the final state. I don't want to false report a door as closed when it is not.
+
+If the door state accorind to ryobi is every opening or closing I will use the short polling time until the door is out of that state.
 
 ## garagedoor_id
 
@@ -64,6 +67,7 @@ In a browser (I recommend using FireFox because it automatically formats the jso
 `https://tti.tiwiconnect.com/api/devices?username=RYOBI_ACCOUNT_EMAIL&password=RYOBI_PASSORD`
 
 You will get an array of results, if you have only 1 device (like me) the devide id will be **`result[0].varName`** except if result[0].deviceTypeIds[1] == `gda500hub` then use **`result[1].varName`** .
+
 
 ## Wanted
 

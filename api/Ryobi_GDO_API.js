@@ -7,28 +7,6 @@ const apikeyURL =    'https://tti.tiwiconnect.com/api/login'
 const deviceURL =    'https://tti.tiwiconnect.com/api/devices'
 const websocketURL = 'wss://tti.tiwiconnect.com/api/wsrpc'
 
-/* 
-This is an API to control the Ryobi_GDO_API.This is built upon the work of others. Specifically:
-
-	https://yannipang.com/blog/ryobi-garage-door-api/
-	https://github.com/Madj42/RyobiGDO
-	https://community.smartthings.com/t/ryobi-modular-smart-garage-door-opener/
-
-	Commands (Not Implemented) to control lights:
-		If in the futrue a light switch feature was added as well could easily add this support
-
-		Turn On the Light:
-
-			{"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"lightState":true},"topic":"GARAGEDOOR_ID"}}
-
-		Turn Off the Light:
-
-			 {"jsonrpc":"2.0","method":"gdoModuleCommand","params":{"msgType":16,"moduleType":5,"portId":7,"moduleMsg":{"lightState":false},"topic":"GARAGEDOOR_ID"}}
-
-*/
-
-
-
 class Ryobi_GDO_API {
     constructor(email, password, deviceid, log, debug, debug_sensitive) {
         this.email = email;
