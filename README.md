@@ -6,10 +6,6 @@
 
 I would REFRAIN from using for now becase the status is not updating correctly for me always. I need to look into this more. Eventually it gets reset correctly using the `polling_state_delay`. This issue has something to do with telling the door to open/close but then not reporting back the opening/closing state but the initial state. 
 
-## Arrrrrrgggghhhhhhhh!!! 
-
-*My "home" app gets into a hosed situation where it says  " `no response`" although it initially shows the correct state--I can use the controls and everything looks like it is responding. Sometimes the HomeBridge accessory disappears too. Sometiomes I can't add a new HomeBridge accessory.....   I've had to delete my homebridge, rename it, give it a new ID, delete 'my home',  throw out the homebridge caches.... Oh, and now I find I have to restart my router to fix issues! Oh even better I had to turn toggle off/on the iCloud keychain on all my devices. This is a huge impact on my development. Driving me nuts.*
-
 ## Installation
 
 1. Install homebridge using: `npm install -g homebridge`
@@ -68,10 +64,28 @@ In a browser (I recommend using FireFox because it automatically formats the jso
 
 You will get an array of results, if you have only 1 device (like me) the devide id will be **`result[0].varName`** except if result[0].deviceTypeIds[1] == `gda500hub` then use **`result[1].varName`** .
 
+## homebridge log entries:
 
-## Wanted
+In the normal course of running you will see the log stuff like this. 
+[9/8/2019, 12:33:45 PM] Homebridge is running on port 51826.
+[9/8/2019, 12:33:59 PM] [Garage Door] State of Garage Door is: OPEN        << initial state set from polling
+[9/8/2019, 12:34:12 PM] [Garage Door] Set Garage Door to 1                        << in the ehome app closed the door
+[9/8/2019, 12:34:27 PM] [Garage Door] State of Garage Door is: CLOSING  << using the **poll_short_delay** detected door is closing
+[9/8/2019, 12:34:43 PM] [Garage Door] State of Garage Door is: CLOSED    << using the **poll_short_delay** detected door is closed
+[9/8/2019, 12:40:49 PM] [Garage Door] State of Garage Door is: OPEN        <<I manually press the garage door opened not in the home app,  using the **poll_short_delay** detected door is closed
 
-If you know how to get the current ryobi garage door state with just an API KEY  then I will change the code to use a KEY, DOORID and DEVICE TYPE which you will need to provide (I'll give instructions.) I'd prefer then enhanced security this would have and so would you!
+## Security concerns and help wanted
+
+### Would like to get the device status with an APIKEY and DEVICE ID.
+    I want to get rid of using passwords and would rather have an APIKEY and DEVICE ID in the config file and pprovice instructions to the user to obtain them and put in the config file. The issue is that to get the satus I need the password. SInce I need that password for that case the code just grabs the key and device id.
+    
+    The key is used when sending an actual command.
+
+### The name and password is in the request parameters when getting the status and device ID, they are in post data (a little better) when getting the api key.
+
+    I dont' like this data in the URL's becuase I don't trust that the not just logged in clear text on the ryobi servers. I've tried to change things to post request with data but then I get errors. 
+    
+I have a file 'notes.txt' that shows the APIs. If your interested in solving these concerns of mine please help. I believe that the current APIs were reversed engiueered by yannipang, you can see the sorce website below.
 
 ## Kudos
 
