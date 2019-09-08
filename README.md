@@ -78,9 +78,9 @@ In the normal course of running you will see the log stuff like this (without th
                    ^^^^^  using the **poll_short_delay** detected door is closed
                    
         [9/8/2019, 12:40:49 PM] [Garage Door] State of Garage Door is: OPEN 
-                   ^^^^^  I manually press the garage door opened not in the
-                   ^^^^^  home app,  using the **poll_short_delay** detected 
-                   ^^^^^  door is closed
+                   ^^^^^  I manually press the garage door opener in my car NOT the
+                   ^^^^^  home app. Using the **poll_short_delay** detected 
+                   ^^^^^  door is OPEN
 
 ## Security concerns and help wanted
 
@@ -117,6 +117,6 @@ If however you can have multiple openeris associated with one login then for now
 ### Why use a password and not an apiKey of sorts?
 A password is unfortunately required to get the open/close state of the garage door and to fetch the doorid. I don't like it but that's the way it is. Sorry.
 
-### can I do other things with my garage door?
+### Can I do other things with my garage door?
 It would be fairly easy to add support for the light (it would be a second homekit switch that would show up in the home app) but I have no need or interest in doing this. Probally could also control some of the other door atachments although that would take much more investigation in figuring out the API. Again, I have no interest in that either.
 
