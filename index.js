@@ -11,6 +11,10 @@ module.exports = function(homebridge) {
   homebridge.registerAccessory('homebridge-garagedoor-ryobi', 'RyobiGarageCommand', GarageCmdAccessory);
 };
 
+const POLL_SHORT_DEFAULT = 15;
+const POLL_LONG_DEFAULT = 90;
+
+
 /* 
 NOTES:
 
@@ -107,13 +111,13 @@ GarageCmdAccessory.prototype.getState = function(callback) {
 GarageCmdAccessory.prototype.pollState = function() {
   var accessory = this;
   
- if (this.poll_short_delay < 15) {
+ if (this.poll_short_delay < (POLL_SHORT_DEFAULT * 1000)) {
  	this.log("***WARNING**: poll_short_delay values reset to default value--see doc.");
- 	this.poll_short_delay = 15 * 1000;
+ 	this.poll_short_delay = POLL_SHORT_DEFAULT * 1000;
  }
  if (this.poll_long_delay < this.poll_short_delay) {
  	this.log("***WARNING**: poll_long_delay values too short. reset to default value--see doc. Recommend setting much longer");
- 	this.poll_long_delay = 90 * 1000;
+ 	this.poll_long_delay = POLL_LONG_DEFAULT * 1000;
  }
   
   // Clear any existing timer
@@ -145,7 +149,7 @@ GarageCmdAccessory.prototype.pollState = function() {
 		 }.bind(this))
 	   }.bind(this);
 	   
-  accessory.log("pollShort");
+  //accessory.log("pollShort");
   accessory.stateTimer = setTimeout(doIt, this.poll_short_delay); 
   
 }
