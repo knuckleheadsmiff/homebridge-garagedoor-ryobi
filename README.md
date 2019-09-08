@@ -37,7 +37,7 @@ Field                   | Description
 **debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
 
 ## poll_short_delay and poll_long_delay
-After setting sendong the opening/closing command to ryobi, it rill returning the original state for the next 0-13 seconds. When I get the state back I actually can't tell if the door is infact remainging in the original state because of a problem or just hasent starting opening yet (and in fact it may already be in the desired state.)  The code will work OK but the result of this is that the short poll delay thinks it is no longer needed and goes into long polling mode which will eventually fix the door state. So I set a min 15 seconds on the short delay to fix this. The code that I forked from just slammed the sate to the final state to get around this, I thought that was wrong, I'd rather leave the state as opening/closing until I really know the final state. I don't want to false report a door as closed when it is not.
+After setting sending an open/close door command to the Ryobi GDO, it unfortunatly returns the original state for the next 0-15 seconds. When I inspect the door state I actually can't tell if: the door is left in the original state because of a problem,  if the command has not been sent yet, or if the door delays in responding (and in fact it may already be opening state.)  I've seen all these cases when debugging. The code will work OK but it may fall back to long polling mode to update the state correctly. This is why I set a min 15 seconds on the short delay--if it is shorted you statrt to see the issues. The code that I forked from just slammed the state to the final state presumably to get around this--I thought that was wrong, I'd rather leave the state as opening/closing until I really know the final state. I don't want to false report a door as closed when it is not.
 
 If the door state accorind to ryobi is every opening or closing I will use the short polling time until the door is out of that state.
 
@@ -45,7 +45,7 @@ If the door state accorind to ryobi is every opening or closing I will use the s
 
 **If you leave **garagedoor_id** out the config file the right thing should happen.**
 
-If you can have multiple garage doors associated with an account (is this possible?) then maybe pass in the id using the instructions below. I mainly added it to the config file while I was developing and thought it might be useful. Sorry for any confustions if it is not. 
+If you can have multiple garage doors associated with an account (is this possible?) then pass in the id using the instructions below. I added this to the config file while I was developing and thought it might be useful. However if some of my API security concerns are resolved (see below) then this will become required.
 
 In a browser (I recommend using FireFox because it automatically formats the json result) execute:
 
@@ -87,7 +87,7 @@ In the normal course of running you will see the log stuff like this (without th
 I have a file 'notes.txt' that shows the APIs. If your interested in solving these concerns of mine please help. I believe that the current APIs were reversed engineered by yannipang, you can see his website below.
 
 ### Would like to get the device status with an APIKEY and DEVICE ID.
-I want to get rid of using passwords and would rather have an APIKEY and DEVICE ID in the config file (and of course include instructions to the user to obtain them.) The issue is that to get the door status I need the password. SInce I need that password for that case the code just grabs the key and device id.
+I want to get rid of using passwords and would rather have an APIKEY and DEVICE ID in the config file (and of course include instructions to the user to obtain them.) The issue is that to get the door status I need the password. Since I need that password for that case the code just grabs the key and device id.
 
 The  APIKEY key is currently used ONLY when sending an actual command, not getting the door status.
 
