@@ -70,7 +70,7 @@ GarageCmdAccessory.prototype.setState = function(targetState, callback, context)
   var doIt = function (err) {
 		  if (err) {
 			accessory.log('Error: ' + err);
-			callback(err || new Error('Error setting state to ' +  targetState));
+			callback(err);
 		  } else {
 			accessory.log('Set ' + accessory.name + ' to ' + targetState);
 			if (targetState == Characteristic.CurrentDoorState.CLOSED) {
@@ -92,7 +92,7 @@ GarageCmdAccessory.prototype.getState = function(callback) {
   var doIt = function (err, state) {
 		if (err) {
 		  accessory.log('Error: ' + err);
-		  callback(err || new Error('Error getting state of ' + accessory.name));
+		  callback(err);
 		} else {
 		  if (accessory.lastStateSeen != state) {
 		  		//what to log any change;
@@ -129,21 +129,26 @@ GarageCmdAccessory.prototype.pollState = function() {
   var doIt = function(checkQuick) {
 	   accessory.getState(function(err, currentDeviceState) {
 	   
-		   if (err) {
-			 accessory.log(err);
-			 accessory.stateTimer = setTimeout(doIt, this.poll_state_delay); 
-			 return;
-		   }
-		   this.debug("GarageCmdAccessory.prototype.pollState: " + currentDeviceState);
+		   try {
+			   if (err) {
+				 accessory.log(err);
+				 accessory.stateTimer = setTimeout(doIt, this.poll_state_delay); 
+				 return;
+			   }
+			   this.debug("GarageCmdAccessory.prototype.pollState: " + currentDeviceState);
 
-		   if (currentDeviceState == Characteristic.CurrentDoorState.OPENING || currentDeviceState == Characteristic.CurrentDoorState.CLOSING) {
-				//if not in open/close state check again sooner or was just opened or closed by homekit.
-				//accessory.log("pollShort - currentDeviceState:" + currentDeviceState);
-				accessory.stateTimer = setTimeout(doIt, this.poll_short_delay); 
-		   } else {
-				//accessory.log("pollLong - currentDeviceState:" + currentDeviceState);
-				accessory.garageDoorService.setCharacteristic(Characteristic.CurrentDoorState, currentDeviceState);
-				accessory.stateTimer = setTimeout(doIt, this.poll_long_delay); 
+			   if (currentDeviceState == Characteristic.CurrentDoorState.OPENING || currentDeviceState == Characteristic.CurrentDoorState.CLOSING) {
+					//if not in open/close state check again sooner or was just opened or closed by homekit.
+					//accessory.log("pollShort - currentDeviceState:" + currentDeviceState);
+					accessory.stateTimer = setTimeout(doIt, this.poll_short_delay); 
+			   } else {
+					//accessory.log("pollLong - currentDeviceState:" + currentDeviceState);
+					accessory.garageDoorService.setCharacteristic(Characteristic.CurrentDoorState, currentDeviceState);
+					accessory.stateTimer = setTimeout(doIt, this.poll_long_delay); 
+			   }
+		   } catch (error) {
+				 accessory.log(error);
+				 accessory.stateTimer = setTimeout(doIt, this.poll_state_delay); 
 		   }
 		   
 		 }.bind(this))

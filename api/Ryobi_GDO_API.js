@@ -186,8 +186,8 @@ class Ryobi_GDO_API {
 				});
 
 			} catch(error) {
-				this.debug("Error sending sendWebsocketCommand");
-				this.debug("Error Message: " + error);
+				this.log("Error sending sendWebsocketCommand");
+				this.log("Error Message: " + error);
 				callback(error);
 			}
 		}.bind(this);

@@ -5,7 +5,7 @@
 ## Installation
 
 1. Install homebridge using: `npm install -g homebridge`
-2. Install this plugin using: `npm install -g homebridge-garagedoor-command`
+2. Install this plugin using: `npm install -g homebridge-garagedoor-ryobi`
 3. Update your configuration file. See the sample below.
 
 ## Configuration
