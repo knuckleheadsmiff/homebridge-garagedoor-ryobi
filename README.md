@@ -102,9 +102,9 @@ I am standing on the shoulders of others.
 
 This work is based on work by:
 
-	[https://yannipang.com/blog/ryobi-garage-door-api/]
-	[https://github.com/Madj42/RyobiGDO]
-	[https://community.smartthings.com/t/ryobi-modular-smart-garage-door-opener/]
+[*]:https://yannipang.com/blog/ryobi-garage-door-api/
+[*]: https://github.com/Madj42/RyobiGDO]
+[*]:[https://community.smartthings.com/t/ryobi-modular-smart-garage-door-opener/
 	
 The initial project skeleton (although signigicantly changed) was forked from the [homebridge-garagedoor-command](https://github.com/apexad/homebridge-garagedoor-command) plugin.
 
