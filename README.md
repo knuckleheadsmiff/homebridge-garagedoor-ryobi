@@ -118,5 +118,5 @@ If however you can have multiple openeris associated with one login then for now
 A password is unfortunately required to get the open/close state of the garage door and to fetch the doorid. I don't like it but that's the way it is. Sorry.
 
 ### Can I do other things with my garage door?
-It would be fairly easy to add support for the light (it would be a second homekit switch that would show up in the home app) but I have no need or interest in doing this. Probally could also control some of the other door atachments although that would take much more investigation in figuring out the API. Again, I have no interest in that either.
+It would be fairly easy to add support for the light--it would be a second homekit switch that would show up in the home app. I have no need or interest in doing this but if someone wants 'll take help. Probally could also control some of the other door atachments although that would take much more investigation in figuring out the API. Again, I have no interest in that either.
 
