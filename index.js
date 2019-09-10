@@ -92,6 +92,7 @@ GarageCmdAccessory.prototype.getState = function(callback) {
   var doIt = function (err, state) {
 		if (err) {
 		  accessory.log('Error: ' + err);
+		  accessory.lastStateSeen = 'unknown';
 		  callback(err);
 		} else {
 		  if (accessory.lastStateSeen != state) {
