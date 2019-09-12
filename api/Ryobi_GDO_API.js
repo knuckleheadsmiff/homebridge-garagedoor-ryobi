@@ -28,9 +28,9 @@ class Ryobi_GDO_API {
  		   this.debug("getApiKey responded");
            if (!err) {
 				if (this.debug_sensitive) this.debug("body: "+ body);
-                const jsonObj = JSON.parse(body);
 				
 				try {
+                	const jsonObj = JSON.parse(body);
 					this.apikey = jsonObj.result.auth.apiKey;
 					if (this.debug_sensitive) this.debug("apiKey: "+ this.apikey);
 					callback(null, this.apikey);
@@ -62,9 +62,9 @@ class Ryobi_GDO_API {
 			this.debug("getDeviceID responded");
 			if (!err) {
 				if (this.debug_sensitive) this.debug("body: "+ body);
-				const jsonObj = JSON.parse(body);
 			
 				try {
+					const jsonObj = JSON.parse(body);
 					var deviceModel = jsonObj.result[0].deviceTypeIds[0];
 					this.deviceid = (deviceModel == 'gda500hub') ? jsonObj.result[1].varName : jsonObj.result[0].varName;
 					if (this.debug_sensitive) this.debug("deviceModel: " + deviceModel);
@@ -103,9 +103,9 @@ class Ryobi_GDO_API {
 				this.debug("GetStatus responded: ");
 				if (!err) {
 					if (this.debug_sensitive) this.debug("body: "+ body);
-					const jsonObj = JSON.parse(body);
 				
 					try {
+						const jsonObj = JSON.parse(body);
 						var state = this.parseReport(jsonObj, callback);
 						callback(null, state);
 					} catch(error) {
