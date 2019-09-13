@@ -31,6 +31,12 @@ class Ryobi_GDO_API {
 				
 				try {
                 	const jsonObj = JSON.parse(body);
+                	
+					// can see: {"result":"Unauthorized"}
+					if (jsonObj.result == "Unauthorized") {
+						throw new Error ("Unauthorized -- check your ryobi username/password");
+					}
+					
 					this.apikey = jsonObj.result.auth.apiKey;
 					if (this.debug_sensitive) this.debug("apiKey: "+ this.apikey);
 					callback(null, this.apikey);
@@ -65,6 +71,12 @@ class Ryobi_GDO_API {
 			
 				try {
 					const jsonObj = JSON.parse(body);
+
+					// can see: {"result":"Unauthorized"}
+					if (jsonObj.result == "Unauthorized") {
+						throw new Error ("Unauthorized -- check your ryobi username/password");
+					}
+					
 					var deviceModel = jsonObj.result[0].deviceTypeIds[0];
 					this.deviceid = (deviceModel == 'gda500hub') ? jsonObj.result[1].varName : jsonObj.result[0].varName;
 					if (this.debug_sensitive) this.debug("deviceModel: " + deviceModel);
