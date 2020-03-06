@@ -34,6 +34,7 @@ Field                   | Description
 **poll_short_delay**         | (**Default is 15 seconds** ) Polling status (in seconds) while garage door is opening and closing. Min value 15;  
 **poll_long_delay**          | (**Default is 90 seconds** ) Time between polling for the garage door's state.  Outside of opening and closing. Min value >= poll_short_delay;
 **garagedoor_id**        |  (**recommend NOT setting**) defaults correctly, **see below**
+**garagedoor_name**    |  If you have multiple garage door, specify the name of the door so you don't have to look up the id.
 **debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
 
 ## poll_short_delay and poll_long_delay

@@ -59,7 +59,8 @@ class Ryobi_GDO_API {
     
     getDeviceID(callback) {
 		this.debug("getDeviceID");
-		if (this.deviceid) {
+
+		if (this.deviceid && typeof this.deviceid !== 'function') {
 			if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
 			return callback(null, this.deviceid);
 		}
@@ -77,8 +78,13 @@ class Ryobi_GDO_API {
 						throw new Error ("Unauthorized -- check your ryobi username/password");
 					}
 					
-					var deviceModel = jsonObj.result[0].deviceTypeIds[0];
-					this.deviceid = (deviceModel == 'gda500hub') ? jsonObj.result[1].varName : jsonObj.result[0].varName;
+					if(typeof this.deviceid === 'function') {
+						this.deviceid = this.deviceid(jsonObj);
+					} else {
+						var deviceModel = jsonObj.result[0].deviceTypeIds[0];
+						this.deviceid = (deviceModel == 'gda500hub') ? jsonObj.result[1].varName : jsonObj.result[0].varName;
+					}
+
 					if (this.debug_sensitive) this.debug("deviceModel: " + deviceModel);
 					if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
 					callback(null, this.deviceid);
@@ -234,6 +240,17 @@ class Ryobi_GDO_API {
 
 }
 
+
+Ryobi_GDO_API.findDeviceIdByName = function findDeviceIdByName(obj, name) {
+	if(Array.isArray(obj.result)) {
+		const device = obj.result.find(x => x.metaData.name === name);
+		if(device) {
+			return device.varName;
+		}
+	}
+	console.error('device not found');
+	return null;
+}
 
 module.exports = {
     Ryobi_GDO_API: Ryobi_GDO_API
