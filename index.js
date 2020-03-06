@@ -42,19 +42,6 @@ function GarageCmdAccessory(log, config) {
   this.ryobi_email = config.email;
   this.ryobi_password = config.password;
   this.ryobi_device_id = config.garagedoor_id;
-
-  if (!config.garagedoor_id) {
-	const garagedoor_name =  config.garagedoor_name;
-	if (!config.name) {
-		this.name = 'Garage Door: ' + garagedoor_name;
-	}
-
-	if (garagedoor_name) {
-		this.ryobi_device_id = function(obj) { 
-			return ryobi_GDO_API.findDeviceIdByName(obj, garagedoor_name); 
-		};
-	}
-  }
   
   this.debug_sensitive = config.debug_sensitive;
   
