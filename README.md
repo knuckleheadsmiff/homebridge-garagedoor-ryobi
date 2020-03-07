@@ -33,8 +33,8 @@ Field                   | Description
 **password**	                  | (**required**) password associate with your garage doors ryobi account
 **poll_short_delay**         | (**Default is 15 seconds** ) Polling status (in seconds) while garage door is opening and closing. Min value 15;  
 **poll_long_delay**          | (**Default is 90 seconds** ) Time between polling for the garage door's state.  Outside of opening and closing. Min value >= poll_short_delay;
-**garagedoor_id**        |  (**recommend NOT setting**) defaults correctly, **see below**
-**garagedoor_name**    |    (**recommend NOT setting**) If you have multiple garage doors, rather than using garagedoor_id you can specify the name of the door.
+**garagedoor_id**        |  (**recommend NOT setting**) Setting if you have multiple doors **see below**
+**garagedoor_name**    |    (**recommend NOT setting**) Alternative Setting if you have multiple doors **see below**.
 **debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
 
 ## poll_short_delay and poll_long_delay
@@ -42,11 +42,11 @@ After setting sending an open/close door command to the Ryobi GDO, it unfortunat
 
 If the door state according to Ryobi is every opening or closing I will use the short polling time until the door is out of that state.
 
-## garagedoor_id or garagedoor_name
+## garagedoor_id or garagedoor_name 
 
 **If you leave **garagedoor_id** out the config file the right thing should happen.**
 
-NEW: You can choose to use the name of the door and set **garagedoor_name** instead.
+NEW: You can choose to use the name of the door and set **garagedoor_name** instead and ignore the info below. (Thanks Andy!)
 
 If you can have multiple garage doors associated with an account (is this possible?) then pass in the id using the instructions below. I added this to the config file while I was developing and thought it might be useful. However if some of my API security concerns are resolved (see below) then this will become required.
 
