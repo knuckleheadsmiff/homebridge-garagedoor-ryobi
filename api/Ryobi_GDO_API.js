@@ -1,6 +1,6 @@
 /*jshint esversion: 6,node: true,-W041: false */
 "use strict";
-const 	request = require('request').defaults({ jar: true }),
+const 	request = require('request'),
 		WebSocket = require('ws');
 
 const apikeyURL =    'https://tti.tiwiconnect.com/api/login'
@@ -14,7 +14,8 @@ class Ryobi_GDO_API {
         this.deviceid = deviceid;
         this.log = log;
         this.debug = debug;
-        this.debug_sensitive = debug_sensitive;
+		this.debug_sensitive = debug_sensitive;
+		this.cookieJar = request.jar();
 	}
 
     getApiKey(callback) {
@@ -55,7 +56,11 @@ class Ryobi_GDO_API {
             }
         }.bind(this);
 
-        request.post({url: encodeURI(apikeyURL), form: {username: this.email, password: this.password}}, doIt);
+        request.post({ 
+			url: encodeURI(apikeyURL), 
+			jar: this.cookieJar, 
+			form: {username: this.email, password: this.password}
+		}, doIt);
         
         return this.apikey;
     }
@@ -103,14 +108,15 @@ class Ryobi_GDO_API {
 			}
 		}.bind(this);
 		
+		const cookieJar = this.cookieJar;
 		this.getApiKey(function(){
-			request(deviceURL, doIt);
+			request({ url: deviceURL, jar: cookieJar }, doIt);
 		});
     }
 
     update(callback) {
         this.debug("Updating ryobi data:");
-        
+        const cookieJar = this.cookieJar;
         this.getDeviceID(function (deviceIDError, deviceID) {
         	if (deviceIDError) {
         		callback(deviceIDError);
@@ -118,7 +124,7 @@ class Ryobi_GDO_API {
         	}
         	
 			var queryUri = deviceURL + '/' + deviceID;
-			request(queryUri, function (err, response, body) {
+			request({ url: queryUri, jar: cookieJar }, function (err, response, body) {
 				this.debug("GetStatus responded: ");
 				if (!err) {
 					if (this.debug_sensitive) this.debug("body: "+ body);
