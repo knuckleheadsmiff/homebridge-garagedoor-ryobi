@@ -33,6 +33,7 @@ Field                   | Description
 **password**	                  | (**required**) password associate with your garage doors ryobi account
 **poll_short_delay**         | (**Default is 15 seconds** ) Polling status (in seconds) while garage door is opening and closing. Min value 15;  
 **poll_long_delay**          | (**Default is 90 seconds** ) Time between polling for the garage door's state.  Outside of opening and closing. Min value >= poll_short_delay;
+**serial_number**       |  (**recommend NOT setting**) Setting if you have multiple doors; Defaults to 001; **see below**
 **garagedoor_id**        |  (**recommend NOT setting**) Setting if you have multiple doors **see below**
 **garagedoor_name**    |    (**recommend NOT setting**) Alternative Setting if you have multiple doors **see below**.
 **debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
@@ -42,7 +43,11 @@ After setting sending an open/close door command to the Ryobi GDO, it unfortunat
 
 If the door state according to Ryobi is every opening or closing I will use the short polling time until the door is out of that state.
 
-## garagedoor_id or garagedoor_name 
+## serial_number
+
+If you run multiple instances then in each instance you must define a unique serial_number otherwise "001" is used for all doors and homekit gets confused according to users.
+
+## garagedoor_id or garagedoor_name
 
 **If you leave **garagedoor_id** out the config file the right thing should happen.**
 
@@ -84,15 +89,6 @@ In the normal course of running you will see the log stuff like this (without th
                    ^^^^^  I manually press the garage door opener in my car NOT the
                    ^^^^^  home app. Using the **poll_short_delay** detected
                    ^^^^^  door is OPEN
-
-## Security concerns and help wanted
-
-I have a file 'notes.txt' that shows the APIs. If your interested in solving these concerns of mine please help. I believe that the current APIs were reversed engineered by yannipang, you can see his website below.
-
-### Would like to get the device status with an APIKEY and DEVICE ID.
-I want to get rid of using passwords and would rather have an APIKEY and DEVICE ID in the config file (and of course include instructions to the user to obtain them.) The issue is that to get the door status I need the password. Since I need that password for that case the code just grabs the key and device id.
-
-The  APIKEY key is currently used ONLY when sending an actual command, not getting the door status.  
 
 ## Kudos
 
