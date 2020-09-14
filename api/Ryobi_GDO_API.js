@@ -67,11 +67,6 @@ class Ryobi_GDO_API {
     
     getDeviceID(callback) {
 		this.debug("getDeviceID");
-
-		if (this.deviceid && typeof this.deviceid !== 'function') {
-			if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
-			return callback(null, this.deviceid);
-		}
 		
 		var doIt = function (err, response, body) {
 			this.debug("getDeviceID responded");
@@ -110,8 +105,13 @@ class Ryobi_GDO_API {
 		
 		const cookieJar = this.cookieJar;
 		this.getApiKey(function(){
+			if (this.deviceid && typeof this.deviceid !== 'function') {
+				if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
+				return callback(null, this.deviceid);
+			}
+			
 			request({ url: deviceURL, jar: cookieJar }, doIt);
-		});
+		}.bind(this));
     }
 
     update(callback) {
@@ -151,7 +151,11 @@ class Ryobi_GDO_API {
         this.debug("parseReport ryobi data:");
         let homekit_doorstate;
 		
-		var garageDoorModule = Object.values(values.result[0].deviceTypeMap)
+		if (!values || !values.result || !values.result.length > 0)  {
+			throw new Error('Invalid response: ' + JSON.stringify(values, null, 2));
+		}
+
+		const garageDoorModule = Object.values(values.result[0].deviceTypeMap)
 			.find(function(m) {
 				return m && m.at && m.at.moduleProfiles && m.at.moduleProfiles.value && m.at.moduleProfiles.value.some(function(v) {
 					return v.indexOf('garageDoor_') === 0;
