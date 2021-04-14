@@ -1,7 +1,7 @@
 # NOTICE: 
 # I'm looking for someone who would like to take this over; I'm no-longer setup to continue maintaince and have only published code that was contributed by others for awhile. 
 
-# The basecode is old and may not conform to good HomeBridge standards and more recent versions of hoimebridge sometimes complains about callbacks running too slow. I'm just not set up to look into this or fix/improve it.
+# The basecode is old and may not conform to good HomeBridge standards and more recent versions of homebridge sometimes complains about callbacks running too slow. I'm just not set up to look into this or fix/improve it.
 
 
 
