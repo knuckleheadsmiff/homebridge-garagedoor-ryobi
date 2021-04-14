@@ -1,28 +1,43 @@
 {
-    "name": "homebridge-garagedoor-ryobi",
-    "version": "0.2.9",
-    "description": "Ryobi Garage Door plugin for homebridge: https://github.com/nfarina/homebridge",
-    "license": "ISC",
-
+  "name": "homebridge-garagedoor-ryobi",
+  "version": "0.2.9",
+  "description": "Ryobi Garage Door plugin for homebridge: https://github.com/nfarina/homebridge",
+  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git://github.com/knuckleheadsmiff/homebridge-garagedoor-ryobi.git"
   },
   "dependencies": {
-      "debug": "^2.6.9",
-      "request": "^2.88.0",
-      "ws": "^7.1.2"
+    "debug": "^2.6.9",
+    "request": "^2.88.0",
+    "ws": "^7.1.2"
   },
   "keywords": [
-      "homebridge-plugin",
-      "garage",
-      "garage-door",
-      "ryobi"
+    "homebridge-plugin",
+    "garage",
+    "garage-door",
+    "ryobi"
   ],
   "engines": {
-      "node": ">=0.12.0",
-      "homebridge": ">=0.2.0"
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
   },
-  "author": "Russell Sonnenschein",
-  "license": "ISC"
+  "main": "dist/index.js",
+  "scripts": {
+    "lint": "eslint src/**.ts --max-warnings=0",
+    "watch": "npm run build && npm link && nodemon",
+    "build": "rimraf ./dist && tsc",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.31",
+    "@typescript-eslint/eslint-plugin": "^4.16.1",
+    "@typescript-eslint/parser": "^4.16.1",
+    "eslint": "^7.21.0",
+    "homebridge": "^1.3.1",
+    "nodemon": "^2.0.7",
+    "rimraf": "^3.0.2",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.2"
+  }
 }
