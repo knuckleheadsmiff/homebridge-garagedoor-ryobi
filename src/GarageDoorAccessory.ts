@@ -18,7 +18,7 @@ export class GarageDoorAccessory implements AccessoryPlugin {
   name: string;
   ryobi_email: string;
   ryobi_password: string;
-  ryobi_device_id: string | ((obj: unknown) => string);
+  ryobi_device: { id?: string; name?: string } | undefined;
   serial_number: string;
   debug_sensitive: boolean;
   poll_short_delay: number;
@@ -39,7 +39,7 @@ export class GarageDoorAccessory implements AccessoryPlugin {
 
     this.ryobi_email = config.email;
     this.ryobi_password = config.password;
-    this.ryobi_device_id = config.garagedoor_id;
+    this.ryobi_device = { id: config.garagedoor_id };
 
     this.serial_number = "001";
     if (config.serial_number) {
@@ -53,9 +53,7 @@ export class GarageDoorAccessory implements AccessoryPlugin {
       }
 
       if (garagedoor_name) {
-        this.ryobi_device_id = function (obj) {
-          return findDeviceIdByName(obj, garagedoor_name);
-        };
+        this.ryobi_device = { name: garagedoor_name };
       }
     }
 
@@ -68,9 +66,11 @@ export class GarageDoorAccessory implements AccessoryPlugin {
     this.poll_short_delay = this.poll_short_delay * 1000;
 
     this.ryobi = new RyobiGDOApi(
-      this.ryobi_email,
-      this.ryobi_password,
-      this.ryobi_device_id,
+      {
+        email: this.ryobi_email,
+        password: this.ryobi_password,
+      },
+      this.ryobi_device,
       this.log,
       this.debug_sensitive
     );

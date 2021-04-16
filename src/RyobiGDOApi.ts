@@ -8,10 +8,9 @@ const websocketURL = "wss://tti.tiwiconnect.com/api/wsrpc";
 
 export class RyobiGDOApi {
   logging: Logging | undefined;
-  email: string;
-  password: string;
+  credentials: { email: string; password: string };
   deviceId: string | undefined;
-  selector: ((obj: unknown) => string) | undefined;
+  deviceName: string | undefined;
   debug_sensitive = false;
   apiKey: string | undefined;
   cookies: Record<string, string> = {};
@@ -20,18 +19,16 @@ export class RyobiGDOApi {
   doorPortId: number | undefined;
 
   constructor(
-    email: string,
-    password: string,
-    deviceid: string | ((obj: unknown) => string),
+    credentials: { email: string; password: string },
+    device: { id?: string; name?: string },
     logging: Logging | undefined,
     debug_sensitive = false
   ) {
-    this.email = email;
-    this.password = password;
-    if (typeof deviceid === "function") {
-      this.selector = deviceid;
+    this.credentials = credentials;
+    if (device?.name) {
+      this.deviceName = device.name;
     } else {
-      this.deviceId = deviceid;
+      this.deviceId = device.id;
     }
     this.logging = logging;
     this.debug_sensitive = debug_sensitive;
@@ -69,8 +66,8 @@ export class RyobiGDOApi {
     const response = await this.request(apikeyURL, {
       method: "post",
       body: `username=${encodeURIComponent(
-        this.email
-      )}&password=${encodeURIComponent(this.password)}`,
+        this.credentials.email
+      )}&password=${encodeURIComponent(this.credentials.password)}`,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
@@ -130,17 +127,16 @@ export class RyobiGDOApi {
       throw new Error("Unauthorized -- check your ryobi username/password");
     }
 
-    if (this.selector) {
-      this.deviceId = this.selector(jsonObj);
+    if (!this.deviceId && this.deviceName) {
+      this.deviceId = findDeviceIdByName(jsonObj, this.deviceName);
     } else {
-      var deviceModel = jsonObj.result[0].deviceTypeIds[0];
+      const deviceModel = jsonObj.result[0].deviceTypeIds[0];
       this.deviceId =
         deviceModel == "gda500hub"
           ? jsonObj.result[1].varName
           : jsonObj.result[0].varName;
     }
 
-    if (this.debug_sensitive) this.log("deviceModel: " + deviceModel);
     if (this.debug_sensitive) this.log("doorid: " + this.deviceId);
     return this.deviceId;
   }
@@ -202,7 +198,7 @@ export class RyobiGDOApi {
     return homekit_doorstate;
   }
 
-  async sendWebsocketCommand(message: object, state: string) {
+  private async sendWebsocketCommand(message: object, state: string) {
     await this.update();
     const ws = new WebSocket(websocketURL);
 
@@ -215,7 +211,7 @@ export class RyobiGDOApi {
           jsonrpc: "2.0",
           id: 3,
           method: "srvWebSocketAuth",
-          params: { varName: this.email, apiKey: this.apiKey },
+          params: { varName: this.credentials.email, apiKey: this.apiKey },
         });
         if (this.debug_sensitive) {
           this.log("login: " + login);
@@ -230,7 +226,6 @@ export class RyobiGDOApi {
 
         const returnObj = JSON.parse(data.toString());
         if (!returnObj.result?.authorized) return;
-        // || returnObj?.params?.authorized) {
         const sendMessage = JSON.stringify(
           {
             jsonrpc: "2.0",

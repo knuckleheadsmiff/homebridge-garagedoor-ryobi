@@ -1,9 +1,11 @@
 import { findDeviceIdByName, RyobiGDOApi } from "../src/RyobiGDOApi";
 
 const api = new RyobiGDOApi(
-  "",
-  "",
-  (x) => findDeviceIdByName(x, "Main Bay"),
+  {
+    email: "",
+    password: "",
+  },
+  { name: "Main Bay" },
   undefined,
   true
 );
