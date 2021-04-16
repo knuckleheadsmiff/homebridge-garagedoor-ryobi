@@ -1,196 +1,190 @@
-const request = require("request"),
-  WebSocket = require("ws");
+import { Logging } from "homebridge";
+import fetch, { RequestInit } from "node-fetch";
+import WebSocket from "ws";
 
 const apikeyURL = "https://tti.tiwiconnect.com/api/login";
 const deviceURL = "https://tti.tiwiconnect.com/api/devices";
 const websocketURL = "wss://tti.tiwiconnect.com/api/wsrpc";
 
-export class RyobiGDOAPI {
-  constructor(email, password, deviceid, log, debug, debug_sensitive) {
-    this.email = email;
-    this.password = password;
-    this.deviceid = deviceid;
-    this.log = log;
-    this.debug = debug;
-    this.debug_sensitive = debug_sensitive;
-    this.cookieJar = request.jar();
-  }
-
+export class RyobiGDOApi {
+  logging: Logging | undefined;
   email: string;
   password: string;
-  deviceId: string;
+  deviceId: string | undefined;
+  selector: ((obj: unknown) => string) | undefined;
+  debug_sensitive = false;
+  apiKey: string | undefined;
+  cookies: Record<string, string> = {};
+  cookieExpires: Date | undefined;
+  doorModuleId: number | undefined;
+  doorPortId: number | undefined;
 
-  getApiKey(callback) {
-    this.debug("getApiKey");
-    if (this.apikey && this.cookieExpires > new Date()) {
-      if (this.debug_sensitive) this.debug("apiKey: " + this.apikey);
-      return callback(null, this.apikey);
+  constructor(
+    email: string,
+    password: string,
+    deviceid: string | ((obj: unknown) => string),
+    logging: Logging | undefined,
+    debug_sensitive = false
+  ) {
+    this.email = email;
+    this.password = password;
+    if (typeof deviceid === "function") {
+      this.selector = deviceid;
+    } else {
+      this.deviceId = deviceid;
+    }
+    this.logging = logging;
+    this.debug_sensitive = debug_sensitive;
+  }
+  request(url: string, init?: RequestInit) {
+    const cookie = Object.keys(this.cookies)
+      .map((key) => key + "=" + this.cookies[key])
+      .join("; ");
+    console.log(cookie);
+    const response = fetch(url, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        cookie,
+      },
+    });
+    return response;
+  }
+
+  log(message: unknown) {
+    if (this.logging) {
+      this.logging?.(String(message));
+    } else {
+      console.log(message);
+    }
+  }
+
+  async getApiKey() {
+    this.log("getApiKey");
+    if (this.apiKey && this.cookieExpires && this.cookieExpires > new Date()) {
+      if (this.debug_sensitive) this.log("apiKey: " + this.apiKey);
+      return this.apiKey;
     }
 
-    var doIt = function (err, response, body) {
-      this.debug("getApiKey responded");
-      var cookie = response.headers["set-cookie"].join("|");
-      this.cookieExpires = new Date(cookie.match(/Expires\s*=\s*([^;]+)/i)[1]);
-
-      if (!err) {
-        if (this.debug_sensitive) this.debug("body: " + body);
-
-        try {
-          const jsonObj = JSON.parse(body);
-
-          // can see: {"result":"Unauthorized"}
-          if (jsonObj.result == "Unauthorized") {
-            throw new Error(
-              "Unauthorized -- check your ryobi username/password"
-            );
-          }
-
-          this.apikey = jsonObj.result.auth.apiKey;
-          if (this.debug_sensitive) this.debug("apiKey: " + this.apikey);
-          callback(null, this.apikey);
-        } catch (error) {
-          this.log("Error getApiKey 1 -  retrieving ryobi GDO apiKey");
-          this.log("Error  getApiKey - Message: " + error);
-          callback(error);
-        }
-      } else {
-        this.log("Error  getApiKey 2 - retrieving ryobi GDO apiKey");
-        this.log("Error  getApiKey - Message: " + err);
-        callback(err);
-      }
-    }.bind(this);
-
-    request.post(
-      {
-        url: encodeURI(apikeyURL),
-        jar: this.cookieJar,
-        form: { username: this.email, password: this.password },
+    const response = await this.request(apikeyURL, {
+      method: "post",
+      body: `username=${encodeURIComponent(
+        this.email
+      )}&password=${encodeURIComponent(this.password)}`,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      doIt
-    );
+    });
 
-    return this.apikey;
-  }
-
-  getDeviceID(callback) {
-    this.debug("getDeviceID");
-
-    var doIt = function (err, response, body) {
-      this.debug("getDeviceID responded");
-      if (!err) {
-        if (this.debug_sensitive) this.debug("body: " + body);
-
-        try {
-          const jsonObj = JSON.parse(body);
-
-          // can see: {"result":"Unauthorized"}
-          if (jsonObj.result == "Unauthorized") {
-            throw new Error(
-              "Unauthorized -- check your ryobi username/password"
-            );
-          }
-
-          if (typeof this.deviceid === "function") {
-            this.deviceid = this.deviceid(jsonObj);
-          } else {
-            var deviceModel = jsonObj.result[0].deviceTypeIds[0];
-            this.deviceid =
-              deviceModel == "gda500hub"
-                ? jsonObj.result[1].varName
-                : jsonObj.result[0].varName;
-          }
-
-          if (this.debug_sensitive) this.debug("deviceModel: " + deviceModel);
-          if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
-          callback(null, this.deviceid);
-        } catch (error) {
-          this.log("Error getDeviceID 1 - retrieving ryobi GDO getDeviceID");
-          this.log("Error getDeviceID - Message: " + error);
-          callback(error);
-        }
-      } else {
-        this.log("Error getDeviceID 2 - retrieving ryobi GDO getDeviceID");
-        this.log("Error getDeviceID - Message: " + err);
-        callback(err);
-      }
-    }.bind(this);
-
-    const cookieJar = this.cookieJar;
-    this.getApiKey(
-      function () {
-        if (this.deviceid && typeof this.deviceid !== "function") {
-          if (this.debug_sensitive) this.debug("doorid: " + this.deviceid);
-          return callback(null, this.deviceid);
-        }
-
-        request({ url: deviceURL, jar: cookieJar }, doIt);
-      }.bind(this)
-    );
-  }
-
-  update(callback) {
-    this.debug("Updating ryobi data:");
-    const cookieJar = this.cookieJar;
-    this.getDeviceID(
-      function (deviceIDError, deviceID) {
-        if (deviceIDError) {
-          callback(deviceIDError);
-          return;
-        }
-
-        var queryUri = deviceURL + "/" + deviceID;
-        request(
-          { url: queryUri, jar: cookieJar },
-          function (err, response, body) {
-            this.debug("GetStatus responded: ");
-            if (!err) {
-              if (this.debug_sensitive) this.debug("body: " + body);
-
-              try {
-                const jsonObj = JSON.parse(body);
-                var state = this.parseReport(jsonObj, callback);
-                callback(null, state);
-              } catch (error) {
-                this.log("Error update 1 - retrieving ryobi GDO status");
-                this.log("Error Message: " + error);
-                callback(error);
-              }
-            } else {
-              this.log("Error update 2 - retrieving ryobi GDO status");
-              this.log("Error Message: " + err);
-              callback(err);
-            }
-          }.bind(this)
+    this.log("getApiKey responded");
+    const cookies = response.headers.raw()["set-cookie"] ?? [];
+    for (const cookie of cookies) {
+      if (cookie.indexOf("Expires") > -1) {
+        this.cookieExpires = new Date(
+          parseInt(cookie.match(/Expires\s*=\s*([^;]+)/i)?.[1] ?? "")
         );
-      }.bind(this)
-    );
+      }
+      const match = cookie.match(/([^=]+)=([^;]+)/);
+      if (match) {
+        this.cookies[match[1]] = match[2];
+      }
+    }
+
+    const body = await response.text();
+    if (this.debug_sensitive) this.log("body: " + body);
+
+    const jsonObj = JSON.parse(body);
+
+    // can see: {"result":"Unauthorized"}
+    if (
+      jsonObj.result == "Unauthorized" ||
+      jsonObj.result === "Incorrect username/password"
+    ) {
+      throw new Error("Unauthorized -- check your ryobi username/password");
+    }
+
+    this.apiKey = jsonObj.result.auth.apiKey;
+    if (this.debug_sensitive) this.log("apiKey: " + this.apiKey);
+    return this.apiKey;
   }
 
-  parseReport(values) {
-    this.debug("parseReport ryobi data:");
+  async getDeviceID() {
+    if (this.deviceId) return this.deviceId;
+    this.log("getDeviceID");
+
+    const apiKey = await this.getApiKey();
+    if (this.deviceId && typeof this.deviceId !== "function") {
+      if (this.debug_sensitive) this.log("doorid: " + this.deviceId);
+      return this.deviceId;
+    }
+
+    const response = await this.request(deviceURL);
+    this.log("getDeviceID responded");
+    const body = await response.text();
+    if (this.debug_sensitive) this.log("body: " + body);
+
+    const jsonObj = JSON.parse(body);
+
+    // can see: {"result":"Unauthorized"}
+    if (jsonObj.result == "Unauthorized") {
+      throw new Error("Unauthorized -- check your ryobi username/password");
+    }
+
+    if (this.selector) {
+      this.deviceId = this.selector(jsonObj);
+    } else {
+      var deviceModel = jsonObj.result[0].deviceTypeIds[0];
+      this.deviceId =
+        deviceModel == "gda500hub"
+          ? jsonObj.result[1].varName
+          : jsonObj.result[0].varName;
+    }
+
+    if (this.debug_sensitive) this.log("deviceModel: " + deviceModel);
+    if (this.debug_sensitive) this.log("doorid: " + this.deviceId);
+    return this.deviceId;
+  }
+
+  async update() {
+    this.log("Updating ryobi data:");
+    const deviceID = await this.getDeviceID();
+
+    const queryUri = deviceURL + "/" + deviceID;
+    const response = await this.request(queryUri);
+    this.log("GetStatus responded: ");
+    const body = await response.text();
+    if (this.debug_sensitive) this.log("body: " + body);
+
+    const jsonObj = JSON.parse(body);
+    const state = this.parseReport(jsonObj);
+    return state;
+  }
+
+  parseReport(values: any) {
+    this.log("parseReport ryobi data:");
     let homekit_doorstate;
 
-    if (!values || !values.result || !values.result.length > 0) {
+    if (!values?.result?.length) {
       throw new Error("Invalid response: " + JSON.stringify(values, null, 2));
     }
 
-    const garageDoorModule = Object.values(values.result[0].deviceTypeMap).find(
-      function (m) {
-        return (
-          m &&
-          m.at &&
-          m.at.moduleProfiles &&
-          m.at.moduleProfiles.value &&
-          m.at.moduleProfiles.value.some(function (v) {
-            return v.indexOf("garageDoor_") === 0;
-          })
-        );
-      }
+    const garageDoorModule: any = Object.values(
+      values.result[0].deviceTypeMap
+    ).find((m) =>
+      (m as any)?.at?.moduleProfiles?.value?.some(
+        (v) => v.indexOf("garageDoor_") === 0
+      )
     );
 
-    this.doorPortId = garageDoorModule.at.portId.value;
-    this.doorModuleId = garageDoorModule.at.moduleId.value;
-    var doorval =
+    this.doorPortId = garageDoorModule?.at?.portId?.value;
+    this.doorModuleId = garageDoorModule?.at?.moduleId?.value;
+
+    if (!this.doorPortId || !this.doorModuleId) {
+      console.log(JSON.stringify(garageDoorModule, null, 2));
+      throw new Error("Invalid response");
+    }
+
+    const doorval =
       values.result[0].deviceTypeMap["garageDoor_" + this.doorPortId].at
         .doorState.value;
 
@@ -204,119 +198,93 @@ export class RyobiGDOAPI {
       homekit_doorstate = "OPENING";
     }
 
-    this.debug("GARAGEDOOR STATE:" + homekit_doorstate);
+    this.log("GARAGEDOOR STATE:" + homekit_doorstate);
     return homekit_doorstate;
   }
 
-  sendWebsocketCommand(message, callback, state) {
-    this.debug("GARAGEDOOR sendWebsocketcommand");
-    var doorState = state;
+  async sendWebsocketCommand(message: object, state: string) {
+    await this.update();
+    const ws = new WebSocket(websocketURL);
 
-    var doIt = function (apiKey, doorid) {
-      try {
-        this.debug("GARAGEDOOR sendWebsocketcommand: doIt");
-        var debug = this.debug;
-        const ws = new WebSocket(websocketURL);
+    if (!this.doorModuleId) throw new Error("doorModuleId is undefined");
+    if (!this.doorPortId) throw new Error("doorPortId is undefined");
 
-        ws.on(
-          "open",
-          function open() {
-            // Web Socket is connected, send data using send()
-            var openConnection = JSON.stringify({
-              jsonrpc: "2.0",
-              id: 3,
-              method: "srvWebSocketAuth",
-              params: { varName: this.email, apiKey: apiKey },
-            });
-            if (this.debug_sensitive)
-              this.debug("GARAGEDOOR sendWebsocketcommand: " + openConnection);
-            ws.send(openConnection); //CHANGE VARIABLES
-          }.bind(this)
-        );
-
-        ws.on(
-          "message",
-          function incoming(data) {
-            if (this.debug_sensitive) debug("open socket message: " + data);
-            //Getting multiple messages!
-            //    message: {"jsonrpc":"2.0","method":"authorizedWebSocket","params":{"authorized":true,"socketId":"b82879e8.ip-172-31-23-253.4008"}} +74ms
-            //	  message: {"jsonrpc":"2.0","result":{"authorized":true,"varName":"xxxxxxxxxxxx","aCnt":0},"id":3} +4ms
-            // Need to send AFTER authorization the 'result.'
-            var returnObj = JSON.parse(data);
-            if (returnObj.result) {
-              if (returnObj.result.authorized) {
-                var sendMessage = JSON.stringify({
-                  jsonrpc: "2.0",
-                  method: "gdoModuleCommand",
-                  params: {
-                    msgType: 16,
-                    moduleType: this.doorModuleId,
-                    portId: this.doorPortId,
-                    moduleMsg: message,
-                    topic: doorid,
-                  },
-                });
-                if (this.debug_sensitive)
-                  this.debug("GARAGEDOOR sendWebsocketmessage: " + sendMessage);
-                ws.send(sendMessage);
-                callback(null, doorState);
-              }
-              ws.ping();
-            } else {
-              //no-op waiting for a result to be sent back.
-            }
-          }.bind(this)
-        );
-
-        ws.on("pong", function pong() {
-          ws.terminate();
+    const promise = new Promise<string>((resolve) => {
+      ws.on("open", () => {
+        const login = JSON.stringify({
+          jsonrpc: "2.0",
+          id: 3,
+          method: "srvWebSocketAuth",
+          params: { varName: this.email, apiKey: this.apiKey },
         });
-      } catch (error) {
-        this.log("Error sending sendWebsocketCommand");
-        this.log("Error Message: " + error);
-        callback(error);
-      }
-    }.bind(this);
-
-    //getting id and key are both asyncsynchronous which is why this odd double callback. The do get cached afer initcall and in that case the callback is synchronous
-    this.getDeviceID(
-      function (errorid, deviceid) {
-        if (!errorid) {
-          var doorid = deviceid;
-          this.getApiKey(
-            function (errorkey, apiKey) {
-              if (!errorkey) {
-                doIt(apiKey, doorid);
-              } else {
-                callback(errorkey);
-              }
-            }.bind(this)
-          );
-        } else {
-          callback(errorid);
+        if (this.debug_sensitive) {
+          this.log("login: " + login);
         }
-      }.bind(this)
+        ws.send(login);
+      });
+
+      ws.on("message", (data) => {
+        if (this.debug_sensitive) {
+          this.log("message received: " + data);
+        }
+
+        const returnObj = JSON.parse(data.toString());
+        if (!returnObj.result?.authorized) return;
+        // || returnObj?.params?.authorized) {
+        const sendMessage = JSON.stringify(
+          {
+            jsonrpc: "2.0",
+            method: "gdoModuleCommand",
+            params: {
+              msgType: 16,
+              moduleType: this.doorModuleId,
+              portId: this.doorPortId,
+              moduleMsg: message,
+              topic: this.deviceId,
+            },
+          },
+          null,
+          2
+        );
+        if (this.debug_sensitive) {
+          this.log("GARAGEDOOR sendWebsocketmessage: " + sendMessage);
+        }
+        ws.send(sendMessage);
+        ws.ping();
+      });
+
+      ws.on("pong", () => {
+        this.log("pong; terminate");
+        ws.terminate();
+        resolve(state);
+      });
+    });
+    const doorState = await promise;
+    return doorState;
+  }
+
+  async openDoor() {
+    this.log("GARAGEDOOR openDoor");
+    const result = await this.sendWebsocketCommand(
+      { doorCommand: 1 },
+      "OPENING"
     );
+    this.log("result:" + result);
   }
 
-  openDoor(callback) {
-    this.debug("GARAGEDOOR openDoor");
-    this.sendWebsocketCommand({ doorCommand: 1 }, callback, "OPENING");
+  async closeDoor() {
+    this.log("GARAGEDOOR closeDoor");
+    await this.sendWebsocketCommand({ doorCommand: 0 }, "CLOSING");
   }
+}
 
-  closeDoor(callback) {
-    this.debug("GARAGEDOOR closeDoor");
-    this.sendWebsocketCommand({ doorCommand: 0 }, callback, "CLOSING");
-  }
-
-  static findDeviceIdByName = function findDeviceIdByName(obj, name) {
-    if (Array.isArray(obj.result)) {
-      const device = obj.result.find((x) => x.metaData.name === name);
-      if (device) {
-        return device.varName;
-      }
+export function findDeviceIdByName(obj: any, name: string) {
+  if (Array.isArray(obj.result)) {
+    const device = obj.result.find((x: any) => x.metaData.name === name);
+    if (device) {
+      return device.varName;
     }
-    console.error("device not found");
-    return null;
-  };
+  }
+  console.error("device not found");
+  return null;
 }
