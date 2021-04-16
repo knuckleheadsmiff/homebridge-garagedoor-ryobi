@@ -1,10 +1,12 @@
 import { API } from "homebridge";
-import { GarageDoorAccessory } from "./GarageDoorAccessory";
+import { RyobiGDOAccessory } from "./RyobiGDOAccessory";
 
 export = (homebridge: API) => {
   homebridge.registerAccessory(
     "homebridge-garagedoor-ryobi",
     "RyobiGarageCommand",
-    GarageDoorAccessory
+    RyobiGDOAccessory
   );
+
+  //homebridge.registerPlatform("")
 };

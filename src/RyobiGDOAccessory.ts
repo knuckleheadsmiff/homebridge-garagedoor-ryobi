@@ -4,6 +4,7 @@ import {
   API,
   Characteristic,
   CharacteristicValue,
+  Logger,
   Logging,
   LogLevel,
   Service,
@@ -13,8 +14,7 @@ import { RyobiGDOApi } from "./RyobiGDOApi";
 const POLL_SHORT_DEFAULT = 15;
 const POLL_LONG_DEFAULT = 90;
 
-export class GarageDoorAccessory implements AccessoryPlugin {
-  log: Logging;
+export class RyobiGDOAccessory implements AccessoryPlugin {
   name: string;
   ryobi_email: string;
   ryobi_password: string;
@@ -27,15 +27,18 @@ export class GarageDoorAccessory implements AccessoryPlugin {
   lastStateSeen: string | undefined;
   stateTimer: NodeJS.Timer | undefined;
   informationService: Service | undefined;
-  api: API;
   garageDoorService: Service | undefined;
-  characteristic: typeof Characteristic;
 
-  constructor(log: Logging, config: AccessoryConfig, api: API) {
-    this.api = api;
-    this.log = log;
+  public readonly Service: typeof Service = this.api.hap.Service;
+  public readonly Characteristic: typeof Characteristic = this.api.hap
+    .Characteristic;
+
+  constructor(
+    public readonly logger: Logger,
+    public readonly config: AccessoryConfig,
+    public readonly api: API
+  ) {
     this.name = config.name;
-    this.characteristic = api.hap.Characteristic;
 
     this.ryobi_email = config.email;
     this.ryobi_password = config.password;
@@ -58,10 +61,8 @@ export class GarageDoorAccessory implements AccessoryPlugin {
     }
 
     this.debug_sensitive = config.debug_sensitive;
-
     this.poll_short_delay = config.poll_short_delay || 15;
     this.poll_long_delay = config.poll_long_delay || 90;
-
     this.poll_long_delay = this.poll_long_delay * 1000;
     this.poll_short_delay = this.poll_short_delay * 1000;
 
@@ -71,8 +72,7 @@ export class GarageDoorAccessory implements AccessoryPlugin {
         password: this.ryobi_password,
       },
       this.ryobi_device,
-      this.log,
-      this.debug_sensitive
+      this.logger
     );
 
     this.pollState(); // kick off periodic polling;
@@ -80,53 +80,52 @@ export class GarageDoorAccessory implements AccessoryPlugin {
 
   async setState(targetState: CharacteristicValue) {
     if (targetState === undefined) {
-      this.log("Error: target state is undefined");
+      this.logger.debug("Error: target state is undefined");
       return;
     }
 
     const result =
-      targetState == this.characteristic.CurrentDoorState.CLOSED
+      targetState == this.Characteristic.CurrentDoorState.CLOSED
         ? await this.ryobi.closeDoor()
         : await this.ryobi.openDoor();
 
-    this.log("Set " + this.name + " to " + targetState);
-    if (targetState == this.characteristic.CurrentDoorState.CLOSED) {
+    this.logger.debug("Set " + this.name + " to " + targetState);
+    if (targetState == this.Characteristic.CurrentDoorState.CLOSED) {
       this.garageDoorService?.setCharacteristic(
-        this.characteristic.CurrentDoorState,
-        this.characteristic.CurrentDoorState.OPENING
+        this.Characteristic.CurrentDoorState,
+        this.Characteristic.CurrentDoorState.OPENING
       );
     } else {
       this.garageDoorService?.setCharacteristic(
-        this.characteristic.CurrentDoorState,
-        this.characteristic.CurrentDoorState.CLOSING
+        this.Characteristic.CurrentDoorState,
+        this.Characteristic.CurrentDoorState.CLOSING
       );
     }
     this.pollState();
   }
 
   async getState() {
-    const state = await this.ryobi.update();
+    const state = await this.ryobi.getStatus();
     if (this.lastStateSeen != state) {
-      //what to log any change;
-      this.log("State of " + this.name + " is: " + state);
+      this.logger.debug("State of " + this.name + " is: " + state);
     }
     this.lastStateSeen = state;
-    this.log(
+    this.logger.debug(
       "State of Characteristic.CurrentDoorState[state] is: " +
-        this.characteristic.CurrentDoorState[state]
+        this.Characteristic.CurrentDoorState[state]
     );
-    return this.characteristic.CurrentDoorState[state];
+    return this.Characteristic.CurrentDoorState[state];
   }
 
   pollState() {
     if (this.poll_short_delay < POLL_SHORT_DEFAULT * 1000) {
-      this.log(
+      this.logger.debug(
         "***WARNING**: poll_short_delay values reset to default value--see doc."
       );
       this.poll_short_delay = POLL_SHORT_DEFAULT * 1000;
     }
     if (this.poll_long_delay < this.poll_short_delay) {
-      this.log(
+      this.logger.debug(
         "***WARNING**: poll_long_delay values too short. reset to default value--see doc. Recommend setting much longer"
       );
       this.poll_long_delay = POLL_LONG_DEFAULT * 1000;
@@ -138,7 +137,7 @@ export class GarageDoorAccessory implements AccessoryPlugin {
       this.stateTimer = undefined;
     }
 
-    //this.log("pollShort");
+    //this.logger.debug("pollShort");
     this.stateTimer = setTimeout(
       () => this.pollStateNow(),
       this.poll_short_delay
@@ -148,14 +147,14 @@ export class GarageDoorAccessory implements AccessoryPlugin {
   async pollStateNow() {
     const currentDeviceState = await this.getState();
 
-    this.log.log(
+    this.logger.log(
       LogLevel.INFO,
       "GarageCmdAccessory.prototype.pollState: " + currentDeviceState
     );
 
     if (
-      currentDeviceState == this.characteristic.CurrentDoorState.OPENING ||
-      currentDeviceState == this.characteristic.CurrentDoorState.CLOSING
+      currentDeviceState == this.Characteristic.CurrentDoorState.OPENING ||
+      currentDeviceState == this.Characteristic.CurrentDoorState.CLOSING
     ) {
       this.stateTimer = setTimeout(
         () => this.pollStateNow(),
@@ -163,7 +162,7 @@ export class GarageDoorAccessory implements AccessoryPlugin {
       );
     } else {
       this.garageDoorService?.setCharacteristic(
-        this.characteristic.CurrentDoorState,
+        this.Characteristic.CurrentDoorState,
         currentDeviceState
       );
       this.stateTimer = setTimeout(
@@ -181,22 +180,22 @@ export class GarageDoorAccessory implements AccessoryPlugin {
 
     this.informationService
       .setCharacteristic(
-        this.characteristic.Manufacturer,
+        this.Characteristic.Manufacturer,
         "Ryobi Garage-door Opener"
       )
-      .setCharacteristic(this.characteristic.Model, "Homebridge Plugin")
-      .setCharacteristic(this.characteristic.SerialNumber, this.serial_number);
+      .setCharacteristic(this.Characteristic.Model, "Homebridge Plugin")
+      .setCharacteristic(this.Characteristic.SerialNumber, this.serial_number);
 
     this.garageDoorService
-      .getCharacteristic(this.characteristic.TargetDoorState)
+      .getCharacteristic(this.Characteristic.TargetDoorState)
       .on("set", (value) => this.setState(value));
 
     this.garageDoorService
-      .getCharacteristic(this.characteristic.CurrentDoorState)
+      .getCharacteristic(this.Characteristic.CurrentDoorState)
       .on("get", this.getState.bind(this));
 
     this.garageDoorService
-      .getCharacteristic(this.characteristic.TargetDoorState)
+      .getCharacteristic(this.Characteristic.TargetDoorState)
       .on("get", this.getState.bind(this));
 
     return [this.informationService, this.garageDoorService];
