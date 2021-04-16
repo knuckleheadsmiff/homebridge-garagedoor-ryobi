@@ -5,11 +5,10 @@ const api = new RyobiGDOApi(
     email: '',
     password: '',
   },
-  { name: '' },
   console
 );
 
 (async function main() {
-  await api.closeDoor();
-  //await api.getStatus();
+  //await api.closeDoor();
+  console.log(await api.getStatus({ name: 'Main Bay' }));
 })();
