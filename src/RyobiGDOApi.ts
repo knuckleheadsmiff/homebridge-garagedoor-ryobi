@@ -33,6 +33,7 @@ export class RyobiGDOApi {
     this.logging = logging;
     this.debug_sensitive = debug_sensitive;
   }
+
   request(url: string, init?: RequestInit) {
     const cookie = Object.keys(this.cookies)
       .map((key) => key + "=" + this.cookies[key])
@@ -89,18 +90,17 @@ export class RyobiGDOApi {
 
     const body = await response.text();
     if (this.debug_sensitive) this.log("body: " + body);
-
-    const jsonObj = JSON.parse(body);
+    const result = JSON.parse(body);
 
     // can see: {"result":"Unauthorized"}
     if (
-      jsonObj.result == "Unauthorized" ||
-      jsonObj.result === "Incorrect username/password"
+      result.result == "Unauthorized" ||
+      result.result === "Incorrect username/password"
     ) {
       throw new Error("Unauthorized -- check your ryobi username/password");
     }
 
-    this.apiKey = jsonObj.result.auth.apiKey;
+    this.apiKey = result.result.auth.apiKey;
     if (this.debug_sensitive) this.log("apiKey: " + this.apiKey);
     return this.apiKey;
   }
@@ -120,21 +120,20 @@ export class RyobiGDOApi {
     const body = await response.text();
     if (this.debug_sensitive) this.log("body: " + body);
 
-    const jsonObj = JSON.parse(body);
+    const result = JSON.parse(body);
 
-    // can see: {"result":"Unauthorized"}
-    if (jsonObj.result == "Unauthorized") {
+    if (result.result == "Unauthorized") {
       throw new Error("Unauthorized -- check your ryobi username/password");
     }
 
     if (!this.deviceId && this.deviceName) {
-      this.deviceId = findDeviceIdByName(jsonObj, this.deviceName);
+      this.deviceId = findDeviceIdByName(result, this.deviceName);
     } else {
-      const deviceModel = jsonObj.result[0].deviceTypeIds[0];
+      const deviceModel = result.result[0].deviceTypeIds[0];
       this.deviceId =
         deviceModel == "gda500hub"
-          ? jsonObj.result[1].varName
-          : jsonObj.result[0].varName;
+          ? result.result[1].varName
+          : result.result[0].varName;
     }
 
     if (this.debug_sensitive) this.log("doorid: " + this.deviceId);
@@ -151,14 +150,14 @@ export class RyobiGDOApi {
     const body = await response.text();
     if (this.debug_sensitive) this.log("body: " + body);
 
-    const jsonObj = JSON.parse(body);
-    const state = this.parseReport(jsonObj);
+    const result = JSON.parse(body);
+    const state = this.parseReport(result);
     return state;
   }
 
-  parseReport(values: any) {
+  private parseReport(values: any) {
     this.log("parseReport ryobi data:");
-    let homekit_doorstate;
+    let homekit_doorstate: string;
 
     if (!values?.result?.length) {
       throw new Error("Invalid response: " + JSON.stringify(values, null, 2));

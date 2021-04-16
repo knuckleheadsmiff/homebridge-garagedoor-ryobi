@@ -8,7 +8,7 @@ import {
   LogLevel,
   Service,
 } from "homebridge";
-import { findDeviceIdByName, RyobiGDOApi } from "./RyobiGDOApi";
+import { RyobiGDOApi } from "./RyobiGDOApi";
 
 const POLL_SHORT_DEFAULT = 15;
 const POLL_LONG_DEFAULT = 90;
@@ -157,14 +157,11 @@ export class GarageDoorAccessory implements AccessoryPlugin {
       currentDeviceState == this.characteristic.CurrentDoorState.OPENING ||
       currentDeviceState == this.characteristic.CurrentDoorState.CLOSING
     ) {
-      //if not in open/close state check again sooner or was just opened or closed by homekit.
-      //this.log("pollShort - currentDeviceState:" + currentDeviceState);
       this.stateTimer = setTimeout(
         () => this.pollStateNow(),
         this.poll_short_delay
       );
     } else {
-      //this.log("pollLong - currentDeviceState:" + currentDeviceState);
       this.garageDoorService?.setCharacteristic(
         this.characteristic.CurrentDoorState,
         currentDeviceState
