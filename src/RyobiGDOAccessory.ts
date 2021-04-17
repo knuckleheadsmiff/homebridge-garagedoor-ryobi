@@ -64,8 +64,11 @@ export class RyobiGDOAccessory implements AccessoryPlugin {
 
     this.ryobi = new RyobiGDOApi(
       {
-        email: this.ryobi_email,
-        password: this.ryobi_password,
+        credentials: {
+          email: this.ryobi_email,
+          password: this.ryobi_password,
+        },
+        cookies: {},
       },
       this.logger
     );

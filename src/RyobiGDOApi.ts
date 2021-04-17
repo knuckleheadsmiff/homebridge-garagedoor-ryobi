@@ -3,19 +3,14 @@ import fetch, { RequestInit } from 'node-fetch';
 import WebSocket from 'ws';
 import { DeviceStatusResponse, GetDeviceResponse, LoginResponse } from './RyobiGDO';
 import { RyobiGDODevice } from './RyobiGDODevice';
+import { RyobiGDOSession } from './RyobiGDOSession';
 
 const apikeyURL = 'https://tti.tiwiconnect.com/api/login';
 const deviceURL = 'https://tti.tiwiconnect.com/api/devices';
 const websocketURL = 'wss://tti.tiwiconnect.com/api/wsrpc';
 
 export class RyobiGDOApi {
-  apiKey: string | undefined;
-  cookies: Record<string, string> = {};
-  cookieExpires: Date | undefined;
-
-  constructor(private readonly credentials: { email: string; password: string }, private readonly logger: Logger) {
-    this.credentials = credentials;
-  }
+  constructor(private readonly session: RyobiGDOSession, private readonly logger: Logger) {}
 
   public async openDoor(device: Partial<RyobiGDODevice>) {
     this.logger.debug('GARAGEDOOR openDoor');
@@ -80,8 +75,8 @@ export class RyobiGDOApi {
   }
 
   private async request(url: string, init?: RequestInit) {
-    const cookie = Object.keys(this.cookies)
-      .map((key) => key + '=' + this.cookies[key])
+    const cookie = Object.keys(this.session.cookies)
+      .map((key) => key + '=' + this.session.cookies[key])
       .join('; ');
     this.logger.debug('GET ' + url);
 
@@ -96,11 +91,11 @@ export class RyobiGDOApi {
     const cookies = response.headers.raw()['set-cookie'] ?? [];
     for (const cookie of cookies) {
       if (cookie.indexOf('Expires') > -1) {
-        this.cookieExpires = new Date(parseInt(cookie.match(/Expires\s*=\s*([^;]+)/i)?.[1] ?? ''));
+        this.session.cookieExpires = new Date(parseInt(cookie.match(/Expires\s*=\s*([^;]+)/i)?.[1] ?? ''));
       }
       const match = cookie.match(/([^=]+)=([^;]+)/);
       if (match) {
-        this.cookies[match[1]] = match[2];
+        this.session.cookies[match[1]] = match[2];
       }
     }
     return response;
@@ -115,14 +110,14 @@ export class RyobiGDOApi {
 
   private async getApiKey() {
     this.logger.debug('getApiKey');
-    if (this.apiKey && this.cookieExpires && this.cookieExpires > new Date()) {
-      return this.apiKey;
+    if (this.session.apiKey && this.session.cookieExpires && this.session.cookieExpires > new Date()) {
+      return this.session.apiKey;
     }
 
     const result = await this.getJson<LoginResponse>(apikeyURL, {
       method: 'post',
-      body: `username=${encodeURIComponent(this.credentials.email)}&password=${encodeURIComponent(
-        this.credentials.password
+      body: `username=${encodeURIComponent(this.session.credentials.email)}&password=${encodeURIComponent(
+        this.session.credentials.password
       )}`,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -133,8 +128,8 @@ export class RyobiGDOApi {
       throw new Error('Unauthorized -- check your ryobi username/password: ' + result.result);
     }
 
-    this.apiKey = result.result.auth.apiKey;
-    return this.apiKey;
+    this.session.apiKey = result.result.auth.apiKey;
+    return this.session.apiKey;
   }
 
   public async getDevices() {
@@ -195,7 +190,7 @@ export class RyobiGDOApi {
           jsonrpc: '2.0',
           id: 3,
           method: 'srvWebSocketAuth',
-          params: { varName: this.credentials.email, apiKey },
+          params: { varName: this.session.credentials.email, apiKey },
         });
         ws.send(login);
       });
