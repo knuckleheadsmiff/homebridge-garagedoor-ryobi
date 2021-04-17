@@ -2,6 +2,7 @@ import { Logger } from 'homebridge';
 import fetch, { RequestInit } from 'node-fetch';
 import WebSocket from 'ws';
 import { DeviceStatusResponse, GetDeviceResponse, LoginResponse } from './RyobiGDO';
+import { RyobiGDOCredentials } from './RyobiGDOCredentials';
 import { RyobiGDODevice } from './RyobiGDODevice';
 import { RyobiGDOSession } from './RyobiGDOSession';
 
@@ -10,7 +11,11 @@ const deviceURL = 'https://tti.tiwiconnect.com/api/devices';
 const websocketURL = 'wss://tti.tiwiconnect.com/api/wsrpc';
 
 export class RyobiGDOApi {
-  constructor(private readonly session: RyobiGDOSession, private readonly logger: Logger) {}
+  constructor(
+    private readonly session: RyobiGDOSession,
+    private readonly credentials: RyobiGDOCredentials,
+    private readonly logger: Logger
+  ) {}
 
   public async openDoor(device: Partial<RyobiGDODevice>) {
     this.logger.debug('GARAGEDOOR openDoor');
@@ -72,6 +77,7 @@ export class RyobiGDOApi {
     device.portId = toNumber(garageDoorModule?.at?.portId?.value);
     device.moduleId = toNumber(garageDoorModule?.at?.moduleId?.value);
     device.state = toNumber(values.result?.[0]?.deviceTypeMap?.['garageDoor_' + device.portId]?.at?.doorState?.value);
+    device.stateAsOf = Date.now();
   }
 
   private async request(url: string, init?: RequestInit) {
@@ -116,8 +122,8 @@ export class RyobiGDOApi {
 
     const result = await this.getJson<LoginResponse>(apikeyURL, {
       method: 'post',
-      body: `username=${encodeURIComponent(this.session.credentials.email)}&password=${encodeURIComponent(
-        this.session.credentials.password
+      body: `username=${encodeURIComponent(this.credentials.email)}&password=${encodeURIComponent(
+        this.credentials.password
       )}`,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -132,14 +138,14 @@ export class RyobiGDOApi {
     return this.session.apiKey;
   }
 
-  public async getDevices() {
+  public async getDevices(): Promise<RyobiGDODevice[]> {
     await this.getApiKey();
     const devices = await this.getDevicesRaw();
     return devices.map((device) => ({
-      description: device.metaData?.description,
-      name: device.metaData?.name,
-      id: device.varName,
-      model: device.deviceTypeIds?.[0],
+      description: device.metaData?.description ?? '',
+      name: device.metaData?.name!,
+      id: device.varName!,
+      model: device.deviceTypeIds?.[0] ?? '',
     }));
   }
 
@@ -164,7 +170,7 @@ export class RyobiGDOApi {
     this.logger.debug('doorid: ' + device.id);
   }
 
-  public async getDevicesRaw() {
+  private async getDevicesRaw() {
     const result = await this.getJson<GetDeviceResponse>(deviceURL);
 
     if (typeof result.result === 'string' || !Array.isArray(result.result)) {
@@ -190,7 +196,7 @@ export class RyobiGDOApi {
           jsonrpc: '2.0',
           id: 3,
           method: 'srvWebSocketAuth',
-          params: { varName: this.session.credentials.email, apiKey },
+          params: { varName: this.credentials.email, apiKey },
         });
         ws.send(login);
       });

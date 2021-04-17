@@ -2,6 +2,9 @@ import { RyobiGDOApi } from '../src/RyobiGDOApi';
 
 const api = new RyobiGDOApi(
   {
+    cookies: {},
+  },
+  {
     email: '',
     password: '',
   },
