@@ -85,18 +85,22 @@ export class RyobiGDOAccessory {
 
     this.logger.info('Changing ' + this.ryobi_device.name + ' to ' + targetState);
 
-    if (targetState === this.Characteristic.TargetDoorState.CLOSED) {
-      this.service.setCharacteristic(
-        this.Characteristic.CurrentDoorState,
-        this.Characteristic.CurrentDoorState.CLOSING,
-      );
-      await this.ryobi.closeDoor(this.ryobi_device);
-    } else {
-      this.service.setCharacteristic(
-        this.Characteristic.CurrentDoorState,
-        this.Characteristic.CurrentDoorState.OPENING,
-      );
-      await this.ryobi.openDoor(this.ryobi_device);
+    try {
+      if (targetState == this.Characteristic.TargetDoorState.OPEN) {
+        this.service.setCharacteristic(
+          this.Characteristic.CurrentDoorState,
+          this.Characteristic.CurrentDoorState.CLOSING,
+        );
+        await this.ryobi.closeDoor(this.ryobi_device);
+      } else {
+        this.service.setCharacteristic(
+          this.Characteristic.CurrentDoorState,
+          this.Characteristic.CurrentDoorState.OPENING,
+        );
+        await this.ryobi.openDoor(this.ryobi_device);
+      }
+    } catch (ex) {
+      this.logger.error(ex.toString());
     }
 
     this.pollStateNow();
