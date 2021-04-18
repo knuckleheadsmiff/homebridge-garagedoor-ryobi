@@ -2,12 +2,6 @@
 
 [Homebridge](https://github.com/nfarina/homebridge) plugin that supports opening and **closing a single** Ryobi garagedoor opener.
 
-# IMPORTANT NOTICE: 
-I'm looking for someone who would like to take this over; I'm no-longer setup to continue maintenance and have only published code that was contributed by others for awhile. 
-
-The basecode is old and may not conform to good HomeBridge standards and more recent versions of homebridge sometimes complains about callbacks running too slow. I'm just not set up to look into this or fix/improve it.
-
-
 ## Installation
 
 1. Install homebridge using: `npm install -g homebridge`
