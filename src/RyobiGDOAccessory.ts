@@ -85,7 +85,7 @@ export class RyobiGDOAccessory {
 
     this.logger.info('Changing ' + this.ryobi_device.name + ' to ' + targetState);
 
-    if (targetState === this.Characteristic.TargetDoorState.OPEN) {
+    if (targetState === this.Characteristic.TargetDoorState.CLOSED) {
       this.service.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.CLOSING,
