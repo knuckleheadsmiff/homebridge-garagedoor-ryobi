@@ -70,10 +70,7 @@ export class RyobiGDOAccessory {
     this.service =
       this.accessory.getService(this.platform.Service.GarageDoorOpener) ??
       this.accessory.addService(this.platform.Service.GarageDoorOpener);
-    this.service.setCharacteristic(
-      this.platform.Characteristic.Name,
-      'Garage Door: ' + this.ryobi_device.name ?? 'Unnamed Device',
-    );
+    this.service.setCharacteristic(this.platform.Characteristic.Name, this.ryobi_device.name ?? 'Unnamed Device');
 
     this.service
       .getCharacteristic(this.Characteristic.CurrentDoorState)
