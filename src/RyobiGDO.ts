@@ -2,18 +2,18 @@ export interface AT {
   value?: unknown;
   _id?: string;
   metaData?: MetaData;
-  defv?: object;
+  defv?: unknown;
   dataType?: string;
   varType?: string;
   varName?: string;
   enum?: string[];
-  min?: object;
-  max?: object;
+  min?: unknown;
+  max?: unknown;
 }
 
 export interface Module {
   metaData?: MetaData;
-  ac?: object;
+  ac?: unknown;
   at?: Record<string, AT>;
 }
 
@@ -102,7 +102,7 @@ export interface AccountOptions {
 }
 
 export interface RoleMap {
-  roleSelectors?: object[];
+  roleSelectors?: unknown[];
   roleRegex?: string[];
   roleNames?: string[];
 }
@@ -127,7 +127,7 @@ export interface LoginResult {
   deleted?: boolean;
   createdDate?: string;
   activated?: number;
-  notificationTransports?: object[];
+  notificationTransports?: unknown[];
   auth?: Auth;
 }
 

@@ -7,4 +7,5 @@ export interface RyobiGDODevice {
   portId?: number;
   state?: number;
   stateAsOf?: number;
+  type: 'hub' | 'gdo';
 }

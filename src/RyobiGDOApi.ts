@@ -10,25 +10,33 @@ const apikeyURL = 'https://tti.tiwiconnect.com/api/login';
 const deviceURL = 'https://tti.tiwiconnect.com/api/devices';
 const websocketURL = 'wss://tti.tiwiconnect.com/api/wsrpc';
 
+type DoorState = 'CLOSED' | 'OPEN' | 'CLOSING' | 'OPENING';
+const doorStateMap = new Map<number, DoorState>([
+  [0, 'CLOSED'],
+  [1, 'OPEN'],
+  [2, 'CLOSING'],
+  [3, 'OPENING'],
+]);
+
 export class RyobiGDOApi {
   constructor(
     private readonly session: RyobiGDOSession,
     private readonly credentials: RyobiGDOCredentials,
-    private readonly logger: Logger
+    private readonly logger: Logger,
   ) {}
 
-  public async openDoor(device: Partial<RyobiGDODevice>) {
+  public async openDoor(device: Partial<RyobiGDODevice>): Promise<void> {
     this.logger.debug('GARAGEDOOR openDoor');
     const result = await this.sendWebsocketCommand(device, { doorCommand: 1 });
     this.logger.debug('result:' + result);
   }
 
-  public async closeDoor(device: Partial<RyobiGDODevice>) {
+  public async closeDoor(device: Partial<RyobiGDODevice>): Promise<void> {
     this.logger.debug('GARAGEDOOR closeDoor');
     await this.sendWebsocketCommand(device, { doorCommand: 0 });
   }
 
-  public async getStatus(device: Partial<RyobiGDODevice>) {
+  public async getStatus(device: Partial<RyobiGDODevice>): Promise<DoorState | undefined> {
     this.logger.debug('Updating ryobi data');
 
     await this.updateDevice(device);
@@ -38,14 +46,7 @@ export class RyobiGDOApi {
       return undefined;
     }
 
-    const DOOR_STATE_MAP = {
-      0: 'CLOSED',
-      1: 'OPEN',
-      2: 'CLOSING',
-      3: 'OPENING',
-    };
-
-    const homekit_doorstate = DOOR_STATE_MAP[device.state] ?? 'UNKNOWN';
+    const homekit_doorstate = doorStateMap.get(device.state);
     this.logger.debug('GARAGEDOOR STATE:' + homekit_doorstate);
     return homekit_doorstate;
   }
@@ -71,7 +72,7 @@ export class RyobiGDOApi {
     const garageDoorModule = Object.values(map).find(
       (m) =>
         Array.isArray(m?.at?.moduleProfiles?.value) &&
-        m?.at?.moduleProfiles?.value?.some((v) => typeof v === 'string' && v.indexOf('garageDoor_') === 0)
+        m?.at?.moduleProfiles?.value?.some((v) => typeof v === 'string' && v.indexOf('garageDoor_') === 0),
     );
 
     device.portId = toNumber(garageDoorModule?.at?.portId?.value);
@@ -123,14 +124,14 @@ export class RyobiGDOApi {
     const result = await this.getJson<LoginResponse>(apikeyURL, {
       method: 'post',
       body: `username=${encodeURIComponent(this.credentials.email)}&password=${encodeURIComponent(
-        this.credentials.password
+        this.credentials.password,
       )}`,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
 
-    if (typeof result.result == 'string' || !result.result?.auth?.apiKey) {
+    if (typeof result.result === 'string' || !result.result?.auth?.apiKey) {
       throw new Error('Unauthorized -- check your ryobi username/password: ' + result.result);
     }
 
@@ -143,14 +144,17 @@ export class RyobiGDOApi {
     const devices = await this.getDevicesRaw();
     return devices.map((device) => ({
       description: device.metaData?.description ?? '',
-      name: device.metaData?.name!,
-      id: device.varName!,
+      name: device.metaData?.name ?? '',
+      id: device.varName ?? '',
       model: device.deviceTypeIds?.[0] ?? '',
+      type: /hub/i.test(device.deviceTypeIds?.[0] ?? '') ? 'hub' : 'gdo',
     }));
   }
 
   private async getDeviceId(device: Partial<RyobiGDODevice>) {
-    if (device.id) return;
+    if (device.id) {
+      return;
+    }
     this.logger.debug('getDeviceId');
 
     const devices = await this.getDevices();
@@ -158,16 +162,16 @@ export class RyobiGDOApi {
     if (!device.id && device.name) {
       Object.assign(
         device,
-        devices.find((x) => x.name === device.name)
+        devices.find((x) => x.name === device.name),
       );
     } else {
       Object.assign(
         device,
-        devices.find((x) => x.model !== 'gda500hub')
+        devices.find((x) => x.type !== 'hub'),
       );
     }
 
-    this.logger.debug('doorid: ' + device.id);
+    this.logger.debug('device.id: ' + device.id);
   }
 
   private async getDevicesRaw() {
@@ -179,15 +183,19 @@ export class RyobiGDOApi {
     return result?.result;
   }
 
-  private async sendWebsocketCommand(device: Partial<RyobiGDODevice>, message: object) {
+  private async sendWebsocketCommand(device: Partial<RyobiGDODevice>, message: unknown) {
     const ws = new WebSocket(websocketURL);
 
     if (!device.moduleId || !device.portId) {
       await this.updateDevice(device);
     }
 
-    if (!device.moduleId) throw new Error('doorModuleId is undefined');
-    if (!device.portId) throw new Error('doorPortId is undefined');
+    if (!device.moduleId) {
+      throw new Error('doorModuleId is undefined');
+    }
+    if (!device.portId) {
+      throw new Error('doorPortId is undefined');
+    }
 
     const apiKey = await this.getApiKey();
     const promise = new Promise<void>((resolve) => {
@@ -205,7 +213,9 @@ export class RyobiGDOApi {
         this.logger.debug('message received: ' + data);
 
         const returnObj = JSON.parse(data.toString());
-        if (!returnObj.result?.authorized) return;
+        if (!returnObj.result?.authorized) {
+          return;
+        }
         const sendMessage = JSON.stringify(
           {
             jsonrpc: '2.0',
@@ -219,7 +229,7 @@ export class RyobiGDOApi {
             },
           },
           null,
-          2
+          2,
         );
         this.logger.debug('sending websocket: ' + sendMessage);
         ws.send(sendMessage);
@@ -238,9 +248,4 @@ export class RyobiGDOApi {
 
 function toNumber(value: unknown) {
   return typeof value === 'number' ? value : undefined;
-}
-
-export function findDeviceIdByName(result: GetDeviceResponse['result'], name: string) {
-  if (!Array.isArray(result)) return undefined;
-  return result.find((x) => x.metaData?.name === name)?.varName;
 }
