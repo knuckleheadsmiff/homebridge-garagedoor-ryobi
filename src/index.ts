@@ -1,8 +1,7 @@
 import { API } from 'homebridge';
-import { RyobiGDOAccessory } from './RyobiGDOAccessory';
+import { RyobiGDOPlatform } from './RyobiGDOPlatform';
+import { PLATFORM_NAME } from './settings';
 
 export = (homebridge: API) => {
-  homebridge.registerAccessory('homebridge-garagedoor-ryobi', 'RyobiGarageCommand', RyobiGDOAccessory);
-
-  //homebridge.registerPlatform("")
+  homebridge.registerPlatform(PLATFORM_NAME, RyobiGDOPlatform);
 };

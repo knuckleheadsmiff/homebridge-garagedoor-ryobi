@@ -13,7 +13,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { RyobiGDOAccessory } from './RyobiGDOAccessory';
 import { RyobiGDOApi } from './RyobiGDOApi';
 
-export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
+export class RyobiGDOPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
