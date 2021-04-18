@@ -71,6 +71,7 @@ export class RyobiGDOAccessory {
 
     this.service
       .getCharacteristic(this.Characteristic.TargetDoorState)
+      .onGet(async () => (await this.getState()) ?? 0)
       .onSet(async (value) => await this.setState(value));
 
     this.pollState();

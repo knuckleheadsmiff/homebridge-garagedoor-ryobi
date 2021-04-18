@@ -205,11 +205,12 @@ export class RyobiGDOApi {
           method: 'srvWebSocketAuth',
           params: { varName: this.credentials.email, apiKey },
         });
+        this.logger.info('sending api key');
         ws.send(login);
       });
 
       ws.on('message', (data) => {
-        this.logger.debug('message received: ' + data);
+        this.logger.info('message received: ' + data);
 
         const returnObj = JSON.parse(data.toString());
         if (!returnObj.result?.authorized) {
@@ -230,13 +231,14 @@ export class RyobiGDOApi {
           null,
           2,
         );
-        this.logger.debug('sending websocket: ' + sendMessage);
+        this.logger.info('sending websocket: ' + sendMessage);
         ws.send(sendMessage);
+        this.logger.info('sending ping');
         ws.ping();
       });
 
       ws.on('pong', () => {
-        this.logger.debug('pong; terminate');
+        this.logger.info('pong; terminate');
         ws.terminate();
         resolve();
       });
