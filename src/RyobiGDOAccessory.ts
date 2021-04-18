@@ -3,8 +3,8 @@ import { DoorState, RyobiGDOApi } from './RyobiGDOApi';
 import { RyobiGDODevice } from './RyobiGDODevice';
 import { RyobiGDOPlatform } from './RyobiGDOPlatform';
 
-const POLL_SHORT_DEFAULT = 15;
-const POLL_LONG_DEFAULT = 90;
+const POLL_SHORT_DEFAULT = 15e3;
+const POLL_LONG_DEFAULT = 90e3;
 
 export class RyobiGDOAccessory {
   serial_number: string;
@@ -38,6 +38,16 @@ export class RyobiGDOAccessory {
     }
     if (typeof config.poll_long_delay === 'number' && config.poll_long_delay) {
       this.poll_long_delay = config.poll_long_delay * 1000;
+    }
+
+    if (this.poll_short_delay < POLL_SHORT_DEFAULT) {
+      this.logger.warn('poll_short_delay values reset to default value--see doc.');
+      this.poll_short_delay = POLL_SHORT_DEFAULT;
+    }
+
+    if (this.poll_long_delay < this.poll_short_delay) {
+      this.logger.warn('poll_long_delay values reset to default value--see doc.');
+      this.poll_long_delay = POLL_LONG_DEFAULT;
     }
 
     this.ryobi = new RyobiGDOApi(
@@ -85,75 +95,51 @@ export class RyobiGDOAccessory {
 
     this.logger.info('Changing ' + this.ryobi_device.name + ' to ' + targetState);
 
-    try {
-      if (targetState == this.Characteristic.TargetDoorState.CLOSED) {
-        this.service.setCharacteristic(
-          this.Characteristic.CurrentDoorState,
-          this.Characteristic.CurrentDoorState.CLOSING,
-        );
-        await this.ryobi.closeDoor(this.ryobi_device);
-      } else {
-        this.service.setCharacteristic(
-          this.Characteristic.CurrentDoorState,
-          this.Characteristic.CurrentDoorState.OPENING,
-        );
-        await this.ryobi.openDoor(this.ryobi_device);
-      }
-    } catch (ex) {
-      this.logger.error(ex.toString());
+    if (targetState == this.Characteristic.TargetDoorState.CLOSED) {
+      this.service.setCharacteristic(
+        this.Characteristic.CurrentDoorState,
+        this.Characteristic.CurrentDoorState.CLOSING,
+      );
+      await this.ryobi.closeDoor(this.ryobi_device);
+      // add 3 seconds to account for the warning beeps
+      this.schedulePollState(this.poll_short_delay + 3e3);
+    } else {
+      this.service.setCharacteristic(
+        this.Characteristic.CurrentDoorState,
+        this.Characteristic.CurrentDoorState.OPENING,
+      );
+      await this.ryobi.openDoor(this.ryobi_device);
+      this.schedulePollState();
     }
-
-    this.pollStateNow();
   }
 
-  async getState(): Promise<number | undefined> {
+  getState(): number | undefined {
     const doorState = this.Characteristic.CurrentDoorState[this.lastStateSeen ?? 'CLOSED'];
     return doorState;
   }
 
-  pollState() {
-    if (this.poll_short_delay < POLL_SHORT_DEFAULT * 1000) {
-      this.logger.warn('poll_short_delay values reset to default value--see doc.');
-      this.poll_short_delay = POLL_SHORT_DEFAULT * 1000;
-    }
-
-    if (this.poll_long_delay < this.poll_short_delay) {
-      this.logger.warn(
-        'poll_long_delay values too short. reset to default value--see doc. Recommend setting much longer',
-      );
-      this.poll_long_delay = POLL_LONG_DEFAULT * 1000;
-    }
-
+  public schedulePollState(delay: number = this.poll_short_delay) {
     if (this.stateTimer) {
       clearTimeout(this.stateTimer);
       this.stateTimer = undefined;
     }
 
-    this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_short_delay);
+    this.stateTimer = setTimeout(() => this.pollStateNow(), delay);
   }
 
-  async pollStateNow() {
+  private async pollStateNow() {
     if (this.stateTimer) {
       clearTimeout(this.stateTimer);
       this.stateTimer = undefined;
     }
 
-    this.lastStateSeen = await this.ryobi.getStatus(this.ryobi_device);
-    const currentDeviceState = this.Characteristic.CurrentDoorState[this.lastStateSeen ?? 'CLOSED'];
-
-    this.logger.log(LogLevel.INFO, this.ryobi_device.name + ' state: ' + currentDeviceState);
-    if (currentDeviceState === undefined) {
-      return;
-    }
-
-    if (
-      currentDeviceState === this.Characteristic.CurrentDoorState.OPENING ||
-      currentDeviceState === this.Characteristic.CurrentDoorState.CLOSING
-    ) {
-      this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_short_delay);
-    } else {
+    const status = await this.ryobi.getStatus(this.ryobi_device);
+    if (status !== this.lastStateSeen) {
+      const currentDeviceState = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
       this.service.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
-      this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);
+      this.logger.info(this.ryobi_device.name + ' state: ' + currentDeviceState);
     }
+
+    this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);
   }
 }

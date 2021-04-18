@@ -16,6 +16,20 @@
         "type": "string",
         "required": true,
         "default": ""
+      },
+      "poll_short_delay": {
+        "title": "Short Polling Delay",
+        "type": "number",
+        "required": true,
+        "default": 15,
+        "description": "The time it takes for your garage door to open in seconds"
+      },
+      "poll_long_delay": {
+        "title": "Long Polling Delay",
+        "type": "number",
+        "required": true,
+        "default": 90,
+        "description": "The time between status checks on your garage door"
       }
     }
   }
