@@ -10,7 +10,7 @@ const apikeyURL = 'https://tti.tiwiconnect.com/api/login';
 const deviceURL = 'https://tti.tiwiconnect.com/api/devices';
 const websocketURL = 'wss://tti.tiwiconnect.com/api/wsrpc';
 
-type DoorState = 'CLOSED' | 'OPEN' | 'CLOSING' | 'OPENING';
+export type DoorState = 'CLOSED' | 'OPEN' | 'CLOSING' | 'OPENING';
 const doorStateMap = new Map<number, DoorState>([
   [0, 'CLOSED'],
   [1, 'OPEN'],
@@ -32,7 +32,7 @@ export class RyobiGDOApi {
   }
 
   public async closeDoor(device: Partial<RyobiGDODevice>): Promise<void> {
-    this.logger.debug('GARAGEDOOR closeDoor');
+    this.logger.info('GARAGEDOOR closeDoor');
     await this.sendWebsocketCommand(device, { doorCommand: 0 });
   }
 
@@ -47,7 +47,7 @@ export class RyobiGDOApi {
     }
 
     const homekit_doorstate = doorStateMap.get(device.state);
-    this.logger.debug('GARAGEDOOR STATE:' + homekit_doorstate);
+    this.logger.info('GARAGEDOOR STATE: ' + device.state + '/' + homekit_doorstate);
     return homekit_doorstate;
   }
 

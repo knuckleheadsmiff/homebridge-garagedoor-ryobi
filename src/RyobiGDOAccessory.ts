@@ -1,5 +1,5 @@
 import { API, Characteristic, CharacteristicValue, Logger, LogLevel, PlatformAccessory, Service } from 'homebridge';
-import { RyobiGDOApi } from './RyobiGDOApi';
+import { DoorState, RyobiGDOApi } from './RyobiGDOApi';
 import { RyobiGDODevice } from './RyobiGDODevice';
 import { RyobiGDOPlatform } from './RyobiGDOPlatform';
 
@@ -11,7 +11,7 @@ export class RyobiGDOAccessory {
   poll_short_delay = 15e3;
   poll_long_delay = 90e3;
   ryobi: RyobiGDOApi;
-  lastStateSeen: string | undefined;
+  lastStateSeen: DoorState | undefined;
   stateTimer: NodeJS.Timer | undefined;
   service: Service;
 
@@ -82,7 +82,7 @@ export class RyobiGDOAccessory {
       return;
     }
 
-    this.logger.info('Changine ' + this.ryobi_device.name + ' to ' + targetState);
+    this.logger.info('Changing ' + this.ryobi_device.name + ' to ' + targetState);
 
     if (targetState === this.Characteristic.CurrentDoorState.CLOSED) {
       await this.ryobi.closeDoor(this.ryobi_device);
@@ -90,8 +90,7 @@ export class RyobiGDOAccessory {
       await this.ryobi.openDoor(this.ryobi_device);
     }
 
-    this.logger.debug('Set ' + this.ryobi_device.name + ' to ' + targetState);
-    if (targetState === this.Characteristic.CurrentDoorState.CLOSED) {
+    if (targetState === this.Characteristic.CurrentDoorState.OPEN) {
       this.service.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.OPENING,
@@ -113,12 +112,11 @@ export class RyobiGDOAccessory {
     }
 
     if (this.lastStateSeen !== state) {
-      this.logger.debug('State of ' + this.ryobi_device.name + ' is: ' + state);
+      this.logger.info('State of ' + this.ryobi_device.name + ' is: ' + state);
     }
     this.lastStateSeen = state;
 
     const doorState = this.Characteristic.CurrentDoorState[state];
-    this.logger.debug('State of Characteristic.CurrentDoorState[state] is: ' + doorState);
     return doorState;
   }
 
@@ -144,6 +142,11 @@ export class RyobiGDOAccessory {
   }
 
   async pollStateNow() {
+    if (this.stateTimer) {
+      clearTimeout(this.stateTimer);
+      this.stateTimer = undefined;
+    }
+
     const currentDeviceState = await this.getState();
     this.logger.log(LogLevel.INFO, this.ryobi_device.name + ' state: ' + currentDeviceState);
     if (currentDeviceState === undefined) {
