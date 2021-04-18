@@ -6,7 +6,6 @@ import {
   PlatformConfig,
   Service,
   Characteristic,
-  AccessoryConfig,
 } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
@@ -69,7 +68,7 @@ export class RyobiGDOPlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        new RyobiGDOAccessory(this.logger, this.config, this.api, existingAccessory.context.device);
+        new RyobiGDOAccessory(this, existingAccessory);
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
         // remove platform accessories when no longer present
@@ -88,7 +87,7 @@ export class RyobiGDOPlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new RyobiGDOAccessory(this.logger, this.config, this.api, accessory.context.device);
+        new RyobiGDOAccessory(this, accessory);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);

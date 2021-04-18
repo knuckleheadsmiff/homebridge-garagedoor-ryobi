@@ -1,40 +1,32 @@
-import {
-  AccessoryConfig,
-  AccessoryPlugin,
-  API,
-  Characteristic,
-  CharacteristicValue,
-  Logger,
-  LogLevel,
-  PlatformConfig,
-  Service,
-} from 'homebridge';
+import { API, Characteristic, CharacteristicValue, Logger, LogLevel, PlatformAccessory, Service } from 'homebridge';
 import { RyobiGDOApi } from './RyobiGDOApi';
 import { RyobiGDODevice } from './RyobiGDODevice';
+import { RyobiGDOPlatform } from './RyobiGDOPlatform';
 
 const POLL_SHORT_DEFAULT = 15;
 const POLL_LONG_DEFAULT = 90;
 
-export class RyobiGDOAccessory implements AccessoryPlugin {
+export class RyobiGDOAccessory {
   serial_number: string;
-  poll_short_delay: number = 15e3;
-  poll_long_delay: number = 90e3;
+  poll_short_delay = 15e3;
+  poll_long_delay = 90e3;
   ryobi: RyobiGDOApi;
   lastStateSeen: string | undefined;
   stateTimer: NodeJS.Timer | undefined;
-  informationService: Service | undefined;
-  garageDoorService: Service | undefined;
+  service: Service | undefined;
 
+  public readonly logger: Logger = this.platform.logger;
+  public readonly api: API = this.platform.api;
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
   constructor(
-    public readonly logger: Logger,
-    public readonly config: AccessoryConfig | PlatformConfig,
-    public readonly api: API,
+    private readonly platform: RyobiGDOPlatform,
+    private readonly accessory: PlatformAccessory,
     public readonly ryobi_device: Partial<RyobiGDODevice> = {},
   ) {
-    this.ryobi_device = { id: config.garagedoor_id, name: config.name ?? config.garagedoor_name };
+    this.ryobi_device = accessory.context.device;
+    const config = platform.config;
 
     this.serial_number = '001';
     if (config.serial_number) {
@@ -59,6 +51,30 @@ export class RyobiGDOAccessory implements AccessoryPlugin {
       this.logger,
     );
 
+    this.accessory
+      .getService(this.platform.Service.AccessoryInformation)!
+      .setCharacteristic(this.Characteristic.Manufacturer, 'Ryobi Garage-door Opener')
+      .setCharacteristic(this.Characteristic.Model, 'Homebridge Plugin')
+      .setCharacteristic(this.Characteristic.SerialNumber, this.serial_number);
+
+    this.service =
+      this.accessory.getService(this.platform.Service.GarageDoorOpener) ??
+      this.accessory.addService(this.platform.Service.GarageDoorOpener);
+    this.service.setCharacteristic(
+      this.platform.Characteristic.Name,
+      'Garage Door: ' + this.ryobi_device.name ?? 'Unnamed Device',
+    );
+
+    this.service
+      .getCharacteristic(this.Characteristic.CurrentDoorState)
+      .onGet(async () => (await this.getState()) ?? 0)
+      .onSet(async (value) => await this.setState(value));
+
+    this.service
+      .getCharacteristic(this.Characteristic.TargetDoorState)
+      .onGet(async () => (await this.getState()) ?? 0)
+      .onSet(async (value) => await this.setState(value));
+
     this.pollState();
   }
 
@@ -76,12 +92,12 @@ export class RyobiGDOAccessory implements AccessoryPlugin {
 
     this.logger.debug('Set ' + this.ryobi_device.name + ' to ' + targetState);
     if (targetState === this.Characteristic.CurrentDoorState.CLOSED) {
-      this.garageDoorService?.setCharacteristic(
+      this.service?.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.OPENING,
       );
     } else {
-      this.garageDoorService?.setCharacteristic(
+      this.service?.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.CLOSING,
       );
@@ -129,7 +145,7 @@ export class RyobiGDOAccessory implements AccessoryPlugin {
 
   async pollStateNow() {
     const currentDeviceState = await this.getState();
-    this.logger.log(LogLevel.INFO, 'GarageCmdAccessory.prototype.pollState: ' + currentDeviceState);
+    this.logger.log(LogLevel.INFO, this.ryobi_device.name + ' state: ' + currentDeviceState);
     if (currentDeviceState === undefined) {
       return;
     }
@@ -140,27 +156,8 @@ export class RyobiGDOAccessory implements AccessoryPlugin {
     ) {
       this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_short_delay);
     } else {
-      this.garageDoorService?.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
+      this.service?.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
       this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);
     }
-  }
-
-  getServices() {
-    this.informationService = new this.api.hap.Service.AccessoryInformation();
-    this.garageDoorService = new this.api.hap.Service.GarageDoorOpener(this.ryobi_device.name);
-
-    this.informationService
-      .setCharacteristic(this.Characteristic.Manufacturer, 'Ryobi Garage-door Opener')
-      .setCharacteristic(this.Characteristic.Model, 'Homebridge Plugin')
-      .setCharacteristic(this.Characteristic.SerialNumber, this.serial_number);
-
-    this.garageDoorService
-      .getCharacteristic(this.Characteristic.TargetDoorState)
-      .on('set', (value) => this.setState(value));
-
-    this.garageDoorService.getCharacteristic(this.Characteristic.CurrentDoorState).on('get', () => this.getState());
-    this.garageDoorService.getCharacteristic(this.Characteristic.TargetDoorState).on('get', () => this.getState());
-
-    return [this.informationService, this.garageDoorService];
   }
 }
