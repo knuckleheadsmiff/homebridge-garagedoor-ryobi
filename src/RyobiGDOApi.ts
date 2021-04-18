@@ -26,12 +26,12 @@ export class RyobiGDOApi {
   ) {}
 
   public async openDoor(device: Partial<RyobiGDODevice>): Promise<void> {
-    this.logger.info('GARAGEDOOR openDoor ' + JSON.stringify(device));
+    this.logger.info('GARAGEDOOR openDoor');
     await this.sendWebsocketCommand(device, { doorCommand: 1 });
   }
 
   public async closeDoor(device: Partial<RyobiGDODevice>): Promise<void> {
-    this.logger.info('GARAGEDOOR closeDoor ' + JSON.stringify(device));
+    this.logger.info('GARAGEDOOR closeDoor');
     await this.sendWebsocketCommand(device, { doorCommand: 0 });
   }
 
@@ -183,8 +183,6 @@ export class RyobiGDOApi {
   }
 
   private async sendWebsocketCommand(device: Partial<RyobiGDODevice>, message: unknown) {
-    const ws = new WebSocket(websocketURL);
-
     if (!device.moduleId || !device.portId) {
       await this.updateDevice(device);
     }
@@ -198,6 +196,7 @@ export class RyobiGDOApi {
 
     const apiKey = await this.getApiKey();
     const promise = new Promise<void>((resolve) => {
+      const ws = new WebSocket(websocketURL);
       ws.on('open', () => {
         const login = JSON.stringify({
           jsonrpc: '2.0',
@@ -205,12 +204,12 @@ export class RyobiGDOApi {
           method: 'srvWebSocketAuth',
           params: { varName: this.credentials.email, apiKey },
         });
-        this.logger.info('sending api key');
+        this.logger.debug('sending api key');
         ws.send(login);
       });
 
       ws.on('message', (data) => {
-        this.logger.info('message received: ' + data);
+        this.logger.debug('message received: ' + data);
 
         const returnObj = JSON.parse(data.toString());
         if (!returnObj.result?.authorized) {
@@ -231,19 +230,24 @@ export class RyobiGDOApi {
           null,
           2,
         );
-        this.logger.info('sending websocket: ' + sendMessage);
+        this.logger.debug('sending websocket: ' + sendMessage);
         ws.send(sendMessage);
-        this.logger.info('sending ping');
+        this.logger.debug('sending ping');
         ws.ping();
       });
 
       ws.on('pong', () => {
-        this.logger.info('pong; terminate');
+        this.logger.debug('pong; terminate');
         ws.terminate();
         resolve();
       });
+
+      ws.on('close', () => this.logger.debug('closing'));
+      ws.on('error', (x) => this.logger.error('error ' + x));
     });
+
     await promise;
+    this.logger.debug('command finished');
   }
 }
 

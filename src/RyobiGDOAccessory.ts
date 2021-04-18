@@ -74,7 +74,7 @@ export class RyobiGDOAccessory {
       .onGet(async () => (await this.getState()) ?? 0)
       .onSet(async (value) => await this.setState(value));
 
-    this.pollState();
+    this.pollStateNow();
   }
 
   async setState(targetState: CharacteristicValue) {
@@ -107,18 +107,7 @@ export class RyobiGDOAccessory {
   }
 
   async getState(): Promise<number | undefined> {
-    const state = await this.ryobi.getStatus(this.ryobi_device);
-    if (state === undefined) {
-      this.logger.error('Unable to query door state');
-      return;
-    }
-
-    if (this.lastStateSeen !== state) {
-      this.logger.info('State of ' + this.ryobi_device.name + ' is: ' + state);
-    }
-    this.lastStateSeen = state;
-
-    const doorState = this.Characteristic.CurrentDoorState[state];
+    const doorState = this.Characteristic.CurrentDoorState[this.lastStateSeen ?? 'CLOSED'];
     return doorState;
   }
 
@@ -149,7 +138,9 @@ export class RyobiGDOAccessory {
       this.stateTimer = undefined;
     }
 
-    const currentDeviceState = await this.getState();
+    this.lastStateSeen = await this.ryobi.getStatus(this.ryobi_device);
+    const currentDeviceState = this.Characteristic.CurrentDoorState[this.lastStateSeen ?? 'CLOSED'];
+
     this.logger.log(LogLevel.INFO, this.ryobi_device.name + ' state: ' + currentDeviceState);
     if (currentDeviceState === undefined) {
       return;
