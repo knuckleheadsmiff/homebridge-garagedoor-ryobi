@@ -26,13 +26,12 @@ export class RyobiGDOApi {
   ) {}
 
   public async openDoor(device: Partial<RyobiGDODevice>): Promise<void> {
-    this.logger.debug('GARAGEDOOR openDoor');
-    const result = await this.sendWebsocketCommand(device, { doorCommand: 1 });
-    this.logger.debug('result:' + result);
+    this.logger.info('GARAGEDOOR openDoor ' + JSON.stringify(device));
+    await this.sendWebsocketCommand(device, { doorCommand: 1 });
   }
 
   public async closeDoor(device: Partial<RyobiGDODevice>): Promise<void> {
-    this.logger.info('GARAGEDOOR closeDoor');
+    this.logger.info('GARAGEDOOR closeDoor ' + JSON.stringify(device));
     await this.sendWebsocketCommand(device, { doorCommand: 0 });
   }
 
