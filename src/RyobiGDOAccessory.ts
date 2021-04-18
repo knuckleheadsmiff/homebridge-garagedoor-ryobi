@@ -13,7 +13,7 @@ export class RyobiGDOAccessory {
   ryobi: RyobiGDOApi;
   lastStateSeen: string | undefined;
   stateTimer: NodeJS.Timer | undefined;
-  service: Service | undefined;
+  service: Service;
 
   public readonly logger: Logger = this.platform.logger;
   public readonly api: API = this.platform.api;
@@ -67,12 +67,10 @@ export class RyobiGDOAccessory {
 
     this.service
       .getCharacteristic(this.Characteristic.CurrentDoorState)
-      .onGet(async () => (await this.getState()) ?? 0)
-      .onSet(async (value) => await this.setState(value));
+      .onGet(async () => (await this.getState()) ?? 0);
 
     this.service
       .getCharacteristic(this.Characteristic.TargetDoorState)
-      .onGet(async () => (await this.getState()) ?? 0)
       .onSet(async (value) => await this.setState(value));
 
     this.pollState();
@@ -84,6 +82,8 @@ export class RyobiGDOAccessory {
       return;
     }
 
+    this.logger.info('Changine ' + this.ryobi_device.name + ' to ' + targetState);
+
     if (targetState === this.Characteristic.CurrentDoorState.CLOSED) {
       await this.ryobi.closeDoor(this.ryobi_device);
     } else {
@@ -92,12 +92,12 @@ export class RyobiGDOAccessory {
 
     this.logger.debug('Set ' + this.ryobi_device.name + ' to ' + targetState);
     if (targetState === this.Characteristic.CurrentDoorState.CLOSED) {
-      this.service?.setCharacteristic(
+      this.service.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.OPENING,
       );
     } else {
-      this.service?.setCharacteristic(
+      this.service.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.CLOSING,
       );
@@ -156,7 +156,7 @@ export class RyobiGDOAccessory {
     ) {
       this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_short_delay);
     } else {
-      this.service?.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
+      this.service.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
       this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);
     }
   }
