@@ -1,12 +1,12 @@
 {
-  "pluginAlias": "homebridge-garagedoor-ryobi",
+  "pluginAlias": "ryobi-gdo",
   "pluginType": "platform",
-  "singular": true,
+  "singular": false,
   "schema": {
     "type": "object",
     "properties": {
       "email": {
-        "title": "Ryobi GDO Registered Email Address",
+        "title": "Email",
         "type": "string",
         "required": true,
         "default": ""
