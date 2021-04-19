@@ -115,20 +115,20 @@ export class RyobiGDOAccessory {
     return doorState;
   }
 
-  public schedulePollState(delay: number = this.poll_short_delay) {
+  private cancelPoll() {
     if (this.stateTimer) {
       clearTimeout(this.stateTimer);
       this.stateTimer = undefined;
     }
+  }
 
+  public schedulePollState(delay: number = this.poll_short_delay) {
+    this.cancelPoll();
     this.stateTimer = setTimeout(() => this.pollStateNow(), delay);
   }
 
   private async pollStateNow() {
-    if (this.stateTimer) {
-      clearTimeout(this.stateTimer);
-      this.stateTimer = undefined;
-    }
+    this.cancelPoll();
 
     const status = await this.ryobi.getStatus(this.ryobi_device);
     if (status !== this.lastStateSeen) {
