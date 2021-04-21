@@ -19,7 +19,7 @@ export class RyobiGDOAccessory {
   poll_short_delay = 15e3;
   poll_long_delay = 90e3;
   ryobi: RyobiGDOApi;
-  lastStateSeen: DoorState | undefined;
+  lastStateSeen: number | undefined;
   stateTimer: NodeJS.Timer | undefined;
   garageDoorService?: Service;
 
@@ -134,8 +134,7 @@ export class RyobiGDOAccessory {
   }
 
   getState(): number | undefined {
-    const doorState = this.Characteristic.CurrentDoorState[this.lastStateSeen ?? 'CLOSED'];
-    return doorState;
+    return this.lastStateSeen ?? this.Characteristic.CurrentDoorState.CLOSED;
   }
 
   private cancelPoll() {
@@ -155,10 +154,11 @@ export class RyobiGDOAccessory {
 
     this.logger.info(`Polling state of ${this.ryobi_device.name}`)
     const status = await this.ryobi.getStatus(this.ryobi_device);
-    if (status !== this.lastStateSeen) {
-      const currentDeviceState = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
+    const currentDeviceState = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
+    this.logger.info(`${this.ryobi_device.name} state: ${status} (${currentDeviceState})`);
+    if (currentDeviceState !== this.lastStateSeen) {
       this.garageDoorService?.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
-      this.logger.info(`${this.ryobi_device.name} state: ${status} (${currentDeviceState})`);
+      this.lastStateSeen = currentDeviceState;
     }
 
     this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);
