@@ -23,7 +23,7 @@ export class RyobiGDOApi {
     private readonly session: RyobiGDOSession,
     private readonly credentials: RyobiGDOCredentials,
     private readonly logger: Logger,
-  ) {}
+  ) { }
 
   public async openDoor(device: Partial<RyobiGDODevice>): Promise<void> {
     this.logger.info('GARAGEDOOR openDoor');
