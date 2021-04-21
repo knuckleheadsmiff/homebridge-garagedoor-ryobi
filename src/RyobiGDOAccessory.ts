@@ -134,8 +134,7 @@ export class RyobiGDOAccessory {
         this.Characteristic.CurrentDoorState.CLOSING,
       );
       await this.ryobi.closeDoor(this.ryobi_device);
-      // add 3 seconds to account for the warning beeps
-      this.schedulePollState(this.poll_short_delay + 4e3);
+      this.schedulePollState(this.poll_short_delay);
     } else {
       garageDoorService.setCharacteristic(
         this.Characteristic.CurrentDoorState,
@@ -171,8 +170,8 @@ export class RyobiGDOAccessory {
     this.cancelPoll();
     this.logger.info(`Polling state of ${this.ryobi_device.name}`)
     const status = await this.ryobi.getStatus(this.ryobi_device);
-    const currentDeviceState = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
-    this.logger.info(`${this.ryobi_device.name}: ${status} (${currentDeviceState})`);
+    const state = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
+    this.logger.info(`${this.ryobi_device.name}: ${status} (${state})`);
 
     const { garageDoorService } = this;
     if (!garageDoorService) {
@@ -180,12 +179,14 @@ export class RyobiGDOAccessory {
       return
     }
 
-    if (currentDeviceState !== this.getState()) {
-      garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
-      this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_short_delay);
-    } else {
-      this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);
+    if (state !== this.getState()) {
+      garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, state);
     }
+
+    const isActive = state === this.Characteristic.CurrentDoorState.OPENING
+      || state === this.Characteristic.CurrentDoorState.CLOSING;
+    const delay = isActive ? 3e3 : this.poll_long_delay;
+    this.stateTimer = setTimeout(() => this.pollStateNow(), delay);
   }
 }
 
