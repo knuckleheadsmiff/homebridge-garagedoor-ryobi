@@ -102,7 +102,14 @@ export class RyobiGDOAccessory {
 
     garageDoorService
       .getCharacteristic(this.Characteristic.TargetDoorState)
-      .onGet(() => (this.getState()) ?? 0)
+      .onGet(() => {
+        const state = this.getState() ?? this.Characteristic.TargetDoorState.CLOSED;
+        switch (state) {
+          case this.Characteristic.CurrentDoorState.OPENING: return this.Characteristic.TargetDoorState.OPEN;
+          case this.Characteristic.CurrentDoorState.CLOSING: return this.Characteristic.TargetDoorState.CLOSED;
+          default: return state;
+        }
+      })
       .onSet(async (value) => await this.setState(value));
   }
 
@@ -121,7 +128,7 @@ export class RyobiGDOAccessory {
       );
       await this.ryobi.closeDoor(this.ryobi_device);
       // add 3 seconds to account for the warning beeps
-      this.schedulePollState(this.poll_short_delay + 3e3);
+      this.schedulePollState(this.poll_short_delay + 4e3);
     } else {
       this.garageDoorService?.setCharacteristic(
         this.Characteristic.CurrentDoorState,
@@ -135,6 +142,7 @@ export class RyobiGDOAccessory {
   getState(): number | undefined {
     const value = this.garageDoorService?.getCharacteristic(this.Characteristic.CurrentDoorState).value;
     if (typeof value === 'number') return value;
+    this.logger.error('typeof value is ' + typeof value + '; ' + value)
     return this.Characteristic.CurrentDoorState.CLOSED
   }
 
