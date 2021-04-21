@@ -153,11 +153,12 @@ export class RyobiGDOAccessory {
   private async pollStateNow() {
     this.cancelPoll();
 
+    this.logger.info(`Polling state of ${this.ryobi_device.name}`)
     const status = await this.ryobi.getStatus(this.ryobi_device);
     if (status !== this.lastStateSeen) {
       const currentDeviceState = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
       this.garageDoorService?.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
-      this.logger.info(this.ryobi_device.name + ' state: ' + currentDeviceState);
+      this.logger.info(`${this.ryobi_device.name} state: ${status} (${currentDeviceState})`);
     }
 
     this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);

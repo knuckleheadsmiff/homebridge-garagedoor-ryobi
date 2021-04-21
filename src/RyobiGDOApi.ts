@@ -46,7 +46,6 @@ export class RyobiGDOApi {
     }
 
     const homekit_doorstate = doorStateMap.get(device.state);
-    this.logger.info('GARAGEDOOR STATE: ' + device.state + '/' + homekit_doorstate);
     return homekit_doorstate;
   }
 
