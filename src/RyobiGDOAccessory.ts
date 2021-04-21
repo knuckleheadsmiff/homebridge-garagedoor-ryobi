@@ -30,11 +30,6 @@ export class RyobiGDOAccessory {
   private readonly api: API;
 
   constructor(options: AccesoryOptions) {
-    // private readonly platform: RyobiGDOPlatform | undefined,
-    // private readonly api: API | undefined= platform?.api
-    //private readonly accessory: PlatformAccessory,
-    //public readonly ryobi_device: Partial<RyobiGDODevice> = {},
-    //) {
     const logger = options.logger ?? options.platform?.logger;
     if (!logger) {
       throw new Error('logger must be provided');
