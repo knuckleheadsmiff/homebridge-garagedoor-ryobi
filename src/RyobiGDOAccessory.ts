@@ -100,6 +100,7 @@ export class RyobiGDOAccessory {
       .getCharacteristic(this.Characteristic.CurrentDoorState)
       .onGet(() => (this.getState()) ?? 0);
 
+    this.garageDoorService = garageDoorService;
     garageDoorService
       .getCharacteristic(this.Characteristic.TargetDoorState)
       .onGet(() => {
