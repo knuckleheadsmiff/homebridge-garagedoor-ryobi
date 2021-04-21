@@ -114,6 +114,12 @@ export class RyobiGDOAccessory {
   }
 
   async setState(targetState: CharacteristicValue) {
+    const { garageDoorService } = this;
+    if (!garageDoorService) {
+      this.logger.error('garageDoorServices is undefined');
+      return
+    }
+
     if (targetState === undefined) {
       this.logger.debug('Error: target state is undefined');
       return;
@@ -122,7 +128,7 @@ export class RyobiGDOAccessory {
     this.logger.info('Changing ' + this.ryobi_device.name + ' to ' + targetState);
 
     if (targetState == this.Characteristic.TargetDoorState.CLOSED) {
-      this.garageDoorService?.setCharacteristic(
+      garageDoorService.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.CLOSING,
       );
@@ -130,7 +136,7 @@ export class RyobiGDOAccessory {
       // add 3 seconds to account for the warning beeps
       this.schedulePollState(this.poll_short_delay + 4e3);
     } else {
-      this.garageDoorService?.setCharacteristic(
+      garageDoorService.setCharacteristic(
         this.Characteristic.CurrentDoorState,
         this.Characteristic.CurrentDoorState.OPENING,
       );
@@ -142,7 +148,9 @@ export class RyobiGDOAccessory {
   getState(): number | undefined {
     const value = this.garageDoorService?.getCharacteristic(this.Characteristic.CurrentDoorState).value;
     if (typeof value === 'number') return value;
-    this.logger.error('typeof value is ' + typeof value + '; ' + value)
+    if (value) {
+      this.logger.error('typeof value is ' + typeof value + '; ' + value)
+    }
     return this.Characteristic.CurrentDoorState.CLOSED
   }
 
@@ -165,8 +173,14 @@ export class RyobiGDOAccessory {
     const currentDeviceState = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
     this.logger.info(`${this.ryobi_device.name}: ${status} (${currentDeviceState})`);
 
+    const { garageDoorService } = this;
+    if (!garageDoorService) {
+      this.logger.error('garageDoorServices is undefined');
+      return
+    }
+
     if (currentDeviceState !== this.getState()) {
-      this.garageDoorService?.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
+      garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, currentDeviceState);
       this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_short_delay);
     } else {
       this.stateTimer = setTimeout(() => this.pollStateNow(), this.poll_long_delay);
