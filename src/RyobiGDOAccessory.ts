@@ -1,17 +1,28 @@
-import { AccessoryConfig, AccessoryPlugin, API, Characteristic, CharacteristicValue, Logger, LogLevel, PlatformAccessory, Service, ServiceEventTypes } from 'homebridge';
-import { DoorState, RyobiGDOApi } from './RyobiGDOApi';
+import {
+  AccessoryConfig,
+  AccessoryPlugin,
+  API,
+  Characteristic,
+  CharacteristicValue,
+  Logger,
+  PlatformAccessory,
+  Service,
+  UnknownContext,
+} from 'homebridge';
+import { RyobiGDOApi } from './RyobiGDOApi';
 import { RyobiGDODevice } from './RyobiGDODevice';
 import { RyobiGDOPlatform } from './RyobiGDOPlatform';
+import { RyobiGDOSession } from './RyobiGDOSession';
 
 const POLL_SHORT_DEFAULT = 15e3;
 const POLL_LONG_DEFAULT = 90e3;
 
 interface AccesoryOptions {
-  platform?: RyobiGDOPlatform,
-  api: API,
-  accessory?: PlatformAccessory,
-  logger?: Logger,
-  config?: AccessoryConfig,
+  platform?: RyobiGDOPlatform;
+  api: API;
+  accessory?: PlatformAccessory;
+  logger?: Logger;
+  config?: AccessoryConfig;
 }
 
 export class RyobiGDOAccessory {
@@ -27,6 +38,8 @@ export class RyobiGDOAccessory {
   public readonly Characteristic: typeof Characteristic;
   public readonly ryobi_device: Partial<RyobiGDODevice>;
   private readonly api: API;
+  private readonly context?: UnknownContext;
+  private readonly session: RyobiGDOSession;
 
   constructor(options: AccesoryOptions) {
     const logger = options.logger ?? options.platform?.logger;
@@ -35,13 +48,14 @@ export class RyobiGDOAccessory {
     }
     this.logger = logger;
     this.api = options.api;
-    this.Service = this.api.hap.Service
+    this.Service = this.api.hap.Service;
     this.Characteristic = this.api.hap.Characteristic;
 
+    this.context = options.accessory?.context;
     this.ryobi_device = options.accessory?.context.device ?? options.config ?? {};
     const config = options.platform?.config ?? options.config;
     if (!config) {
-      throw new Error('config must be provided')
+      throw new Error('config must be provided');
     }
 
     this.serial_number = '001';
@@ -66,24 +80,42 @@ export class RyobiGDOAccessory {
       this.poll_long_delay = POLL_LONG_DEFAULT;
     }
 
+    this.session = {
+      cookies: {},
+    };
+    const accessory = options.accessory;
+    if (accessory) {
+      this.configureServices(
+        accessory.getService(this.Service.AccessoryInformation)!,
+        accessory.getService(this.Service.GarageDoorOpener) ?? accessory.addService(this.Service.GarageDoorOpener),
+      );
+
+      this.session.apiKey = accessory.context.apiKey;
+      if (accessory.context.cookieExpires) {
+        const expires = new Date(parseInt(accessory.context.cookieExpires));
+        this.session.cookieExpires = expires.getTime() ? expires : undefined;
+      }
+
+      if (accessory.context.cookies) {
+        try {
+          Object.assign(this.session.cookies, JSON.parse(accessory.context.cookies));
+        } catch {
+          this.logger.warn('Unable to parse cookies: ' + accessory.context.cookies);
+          this.session.cookies = {};
+        }
+      }
+    }
+
+    this.logger.info('Restored session: ' + JSON.stringify(this.session, null, 2));
+
     this.ryobi = new RyobiGDOApi(
-      {
-        cookies: {},
-      },
+      this.session,
       {
         email: config.email,
         password: config.password,
       },
       this.logger,
     );
-
-    const accessory = options.accessory;
-    if (accessory) {
-      this.configureServices(accessory
-        .getService(this.Service.AccessoryInformation)!,
-        accessory.getService(this.Service.GarageDoorOpener) ??
-        accessory.addService(this.Service.GarageDoorOpener));
-    }
 
     this.pollStateNow();
   }
@@ -96,9 +128,7 @@ export class RyobiGDOAccessory {
 
     garageDoorService.setCharacteristic(this.Characteristic.Name, this.ryobi_device.name ?? 'Unnamed Device');
 
-    garageDoorService
-      .getCharacteristic(this.Characteristic.CurrentDoorState)
-      .onGet(() => (this.getState()) ?? 0);
+    garageDoorService.getCharacteristic(this.Characteristic.CurrentDoorState).onGet(() => this.getState() ?? 0);
 
     this.garageDoorService = garageDoorService;
     garageDoorService
@@ -106,9 +136,12 @@ export class RyobiGDOAccessory {
       .onGet(() => {
         const state = this.getState() ?? this.Characteristic.TargetDoorState.CLOSED;
         switch (state) {
-          case this.Characteristic.CurrentDoorState.OPENING: return this.Characteristic.TargetDoorState.OPEN;
-          case this.Characteristic.CurrentDoorState.CLOSING: return this.Characteristic.TargetDoorState.CLOSED;
-          default: return state;
+          case this.Characteristic.CurrentDoorState.OPENING:
+            return this.Characteristic.TargetDoorState.OPEN;
+          case this.Characteristic.CurrentDoorState.CLOSING:
+            return this.Characteristic.TargetDoorState.CLOSED;
+          default:
+            return state;
         }
       })
       .onSet(async (value) => await this.setState(value));
@@ -118,7 +151,7 @@ export class RyobiGDOAccessory {
     const { garageDoorService } = this;
     if (!garageDoorService) {
       this.logger.error('garageDoorServices is undefined');
-      return
+      return;
     }
 
     if (targetState === undefined) {
@@ -128,30 +161,27 @@ export class RyobiGDOAccessory {
 
     this.logger.info('Changing ' + this.ryobi_device.name + ' to ' + targetState);
 
-    if (targetState == this.Characteristic.TargetDoorState.CLOSED) {
-      garageDoorService.setCharacteristic(
-        this.Characteristic.CurrentDoorState,
-        this.Characteristic.CurrentDoorState.CLOSING,
-      );
+    if (targetState === this.Characteristic.TargetDoorState.CLOSED) {
+      garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, this.Characteristic.CurrentDoorState.CLOSING);
       await this.ryobi.closeDoor(this.ryobi_device);
       this.schedulePollState(this.poll_short_delay);
     } else {
-      garageDoorService.setCharacteristic(
-        this.Characteristic.CurrentDoorState,
-        this.Characteristic.CurrentDoorState.OPENING,
-      );
+      garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, this.Characteristic.CurrentDoorState.OPENING);
       await this.ryobi.openDoor(this.ryobi_device);
       this.schedulePollState();
     }
+    this.updateContext();
   }
 
   getState(): number | undefined {
-    const value = this.garageDoorService?.getCharacteristic(this.Characteristic.CurrentDoorState).value;
-    if (typeof value === 'number') return value;
-    if (value) {
-      this.logger.error('typeof value is ' + typeof value + '; ' + value)
+    const value = this.garageDoorService?.getCharacteristic(this.Characteristic.CurrentDoorState).value ?? this.context?.state;
+    if (typeof value === 'number') {
+      return value;
     }
-    return this.Characteristic.CurrentDoorState.CLOSED
+    if (value) {
+      this.logger.error('typeof value is ' + typeof value + '; ' + value);
+    }
+    return this.Characteristic.CurrentDoorState.CLOSED;
   }
 
   private cancelPoll() {
@@ -168,34 +198,47 @@ export class RyobiGDOAccessory {
 
   private async pollStateNow() {
     this.cancelPoll();
-    this.logger.info(`Polling state of ${this.ryobi_device.name}`)
+    this.logger.info(`Polling state of ${this.ryobi_device.name}`);
     const status = await this.ryobi.getStatus(this.ryobi_device);
+    this.updateContext();
     const state = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
     this.logger.info(`${this.ryobi_device.name}: ${status} (${state})`);
 
     const { garageDoorService } = this;
     if (!garageDoorService) {
       this.logger.error('garageDoorServices is undefined');
-      return
+      return;
     }
 
     if (state !== this.getState()) {
       garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, state);
     }
 
-    const isActive = state === this.Characteristic.CurrentDoorState.OPENING
-      || state === this.Characteristic.CurrentDoorState.CLOSING;
+    if (this.context) {
+      this.context.state = state;
+    }
+
+    const isActive = state === this.Characteristic.CurrentDoorState.OPENING || state === this.Characteristic.CurrentDoorState.CLOSING;
     const delay = isActive ? 3e3 : this.poll_long_delay;
     this.stateTimer = setTimeout(() => this.pollStateNow(), delay);
+  }
+
+  private updateContext() {
+    const { context } = this;
+    if (!context) {
+      return;
+    }
+
+    context.apiKey = this.session.apiKey;
+    context.cookieExpires = this.session.cookieExpires?.getTime();
+    context.cookies = JSON.stringify(this.session.cookies);
   }
 }
 
 export class StandaloneRyobiGDOAccessory extends RyobiGDOAccessory implements AccessoryPlugin {
   name: string;
 
-  constructor(logger: Logger,
-    config: AccessoryConfig,
-    api: API) {
+  constructor(logger: Logger, config: AccessoryConfig, api: API) {
     super({ config, api, logger });
     this.name = config.name;
   }
