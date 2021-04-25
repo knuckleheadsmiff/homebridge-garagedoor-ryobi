@@ -36,7 +36,6 @@ Field                   | Description
 **serial_number**       |  (**recommend NOT setting**) Setting if you have multiple doors; Defaults to 001; **see below**
 **garagedoor_id**        |  (**recommend NOT setting**) Setting if you have multiple doors **see below**
 **garagedoor_name**    |    (**recommend NOT setting**) Alternative Setting if you have multiple doors **see below**.
-**debug_sensitive**    |  (**recommend NOT setting**) defaults to  false **see below**.
 
 ## poll_short_delay and poll_long_delay
 After setting sending an open/close door command to the Ryobi GDO, it unfortunately returns the original state for the next 0-15 seconds. When I inspect the door state I actually can't tell if: the door is left in the original state because of a problem,  if the command has not been sent yet, or if the door delays in responding (and in fact it may already be opening state.)  I've seen all these cases when debugging. The code will work OK but it may fallback to long polling mode to update the state correctly. This is why I set a min 15 seconds on the short delay--if it is shorted you start to see the issues. The code that I forked from just slammed the state to the final state presumably to get around this--I thought that was wrong, I'd rather leave the state as opening/closing until I really know the final state. I don't want to false report a door as closed when it is not.
@@ -60,12 +59,6 @@ In a browser (I recommend using FireFox because it automatically formats the jso
 `https://tti.tiwiconnect.com/api/devices?username=RYOBI_ACCOUNT_EMAIL&password=RYOBI_PASSORD`
 
 You will get an array of results, if you have only 1 device (like me) the deviceid will be **`result[0].varName`** except if result[0].deviceTypeIds[1] == `gda500hub` then use **`result[1].varName`** .
-
-## debug_sensitive
-
-To debug server requests/responses I need to log lots of sensitive data--not my fault, the server responses include sensitive data scattered. The responses contain from the server Account Names, API keys, and DeviceIDs. You don't want this scattered in homebridge log files on your machine or mailed to other folks that need your homebridge log files for other reasons. Currently I can't prevent this because the API I have to get the the door state requires your login and password--not an api key. This is very unfortunate. A  `debug_sensitive parameter`  config parameter is available and should normally always be false--the default. You have been warned. Had this not been the case I would have used and `apiKey` and the `deviceid` rather than your password in the config file.
-
-The sensitive data is ONLY logged when this config setting is true **and** when debugging homebridge itself: ` DEBUG=* homebridge -D -P`
 
 ## homebridge log entries:
 
