@@ -1,4 +1,4 @@
-import { Logger } from 'homebridge';
+import type { Logger } from 'homebridge';
 import fetch, { RequestInit } from 'node-fetch';
 import WebSocket from 'ws';
 import { DeviceStatusResponse, GetDeviceResponse, LoginResponse } from './RyobiGDO';
@@ -23,15 +23,15 @@ export class RyobiGDOApi {
     private readonly session: RyobiGDOSession,
     private readonly credentials: RyobiGDOCredentials,
     private readonly logger: Logger,
-  ) { }
+  ) {}
 
   public async openDoor(device: Partial<RyobiGDODevice>): Promise<void> {
-    this.logger.info('GARAGEDOOR openDoor');
+    this.logger.debug('GARAGEDOOR openDoor');
     await this.sendWebsocketCommand(device, { doorCommand: 1 });
   }
 
   public async closeDoor(device: Partial<RyobiGDODevice>): Promise<void> {
-    this.logger.info('GARAGEDOOR closeDoor');
+    this.logger.debug('GARAGEDOOR closeDoor');
     await this.sendWebsocketCommand(device, { doorCommand: 0 });
   }
 
@@ -94,15 +94,7 @@ export class RyobiGDOApi {
     });
 
     const cookies = response.headers.raw()['set-cookie'] ?? [];
-    for (const cookie of cookies) {
-      if (cookie.indexOf('Expires') > -1) {
-        this.session.cookieExpires = new Date(parseInt(cookie.match(/Expires\s*=\s*([^;]+)/i)?.[1] ?? ''));
-      }
-      const match = cookie.match(/([^=]+)=([^;]+)/);
-      if (match) {
-        this.session.cookies[match[1]] = match[2];
-      }
-    }
+    updateSessionFromCookies(this.session, cookies);
     return response;
   }
 
@@ -121,9 +113,7 @@ export class RyobiGDOApi {
 
     const result = await this.getJson<LoginResponse>(apikeyURL, {
       method: 'post',
-      body: `username=${encodeURIComponent(this.credentials.email)}&password=${encodeURIComponent(
-        this.credentials.password,
-      )}`,
+      body: `username=${encodeURIComponent(this.credentials.email)}&password=${encodeURIComponent(this.credentials.password)}`,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -247,6 +237,19 @@ export class RyobiGDOApi {
 
     await promise;
     this.logger.debug('command finished');
+  }
+}
+
+export function updateSessionFromCookies(session: RyobiGDOSession, cookies: string[]) {
+  for (const cookie of cookies) {
+    const expires = cookie.match(/expires\s*=\s*([^;]+)/i);
+    if (expires) {
+      session.cookieExpires = new Date(expires[1] ?? '');
+    }
+    const match = cookie.match(/([^=]+)=([^;]+)/);
+    if (match) {
+      session.cookies[match[1]] = match[2];
+    }
   }
 }
 

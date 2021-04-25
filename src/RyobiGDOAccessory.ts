@@ -1,4 +1,4 @@
-import {
+import type {
   AccessoryConfig,
   AccessoryPlugin,
   API,
@@ -117,7 +117,7 @@ export class RyobiGDOAccessory {
       this.logger,
     );
 
-    this.pollStateNow();
+    this.schedulePollState(1);
   }
 
   public configureServices(informationService: Service, garageDoorService: Service) {
@@ -184,7 +184,7 @@ export class RyobiGDOAccessory {
     return this.Characteristic.CurrentDoorState.CLOSED;
   }
 
-  private cancelPoll() {
+  public cancelPoll() {
     if (this.stateTimer) {
       clearTimeout(this.stateTimer);
       this.stateTimer = undefined;
@@ -197,27 +197,31 @@ export class RyobiGDOAccessory {
   }
 
   private async pollStateNow() {
-    this.cancelPoll();
-    this.logger.info(`Polling state of ${this.ryobi_device.name}`);
-    const status = await this.ryobi.getStatus(this.ryobi_device);
-    this.updateContext();
-    const state = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
-    this.logger.info(`${this.ryobi_device.name}: ${status} (${state})`);
+    let state = 0;
+    try {
+      this.cancelPoll();
+      this.logger.debug(`Polling state of ${this.ryobi_device.name}`);
+      const status = await this.ryobi.getStatus(this.ryobi_device);
+      this.updateContext();
+      this.logger.info(`${this.ryobi_device.name}: ${status} (${state})`);
 
-    const { garageDoorService } = this;
-    if (!garageDoorService) {
-      this.logger.error('garageDoorServices is undefined');
-      return;
+      const { garageDoorService } = this;
+      if (!garageDoorService) {
+        this.logger.error('garageDoorServices is undefined');
+        return;
+      }
+
+      state = this.Characteristic.CurrentDoorState[status ?? 'CLOSED'];
+      if (state !== this.getState()) {
+        garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, state);
+      }
+
+      if (this.context) {
+        this.context.state = state;
+      }
+    } catch (ex) {
+      this.logger.error(ex);
     }
-
-    if (state !== this.getState()) {
-      garageDoorService.setCharacteristic(this.Characteristic.CurrentDoorState, state);
-    }
-
-    if (this.context) {
-      this.context.state = state;
-    }
-
     const isActive = state === this.Characteristic.CurrentDoorState.OPENING || state === this.Characteristic.CurrentDoorState.CLOSING;
     const delay = isActive ? 3e3 : this.poll_long_delay;
     this.stateTimer = setTimeout(() => this.pollStateNow(), delay);
