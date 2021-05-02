@@ -1,6 +1,6 @@
 {
   "name": "homebridge-garagedoor-ryobi",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Ryobi Garage Door plugin for homebridge: https://github.com/nfarina/homebridge",
   "license": "ISC",
   "repository": {
