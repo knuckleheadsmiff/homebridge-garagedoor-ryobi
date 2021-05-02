@@ -191,8 +191,9 @@ export class RyobiGDOApi {
       throw new Error('doorPortId is undefined');
     }
 
+    let complete = false;
     const apiKey = await this.getApiKey();
-    const promise = new Promise<void>((resolve) => {
+    const promise = new Promise<void>((resolve, reject) => {
       const ws = new WebSocket(websocketURL);
       ws.on('open', () => {
         const login = JSON.stringify({
@@ -229,6 +230,7 @@ export class RyobiGDOApi {
         );
         this.logger.debug('sending websocket: ' + sendMessage);
         ws.send(sendMessage);
+        complete = true;
         this.logger.debug('sending ping');
         ws.ping();
       });
@@ -239,8 +241,18 @@ export class RyobiGDOApi {
         resolve();
       });
 
-      ws.on('close', () => this.logger.debug('closing'));
-      ws.on('error', (x) => this.logger.error('error ' + x));
+      ws.on('close', () => {
+        this.logger.debug('closing');
+        if (!complete) {
+          this.logger.error('WebSocket closing before completed');
+          reject('WebSocket closed prematurely');
+        }
+      });
+
+      ws.on('error', (x) => {
+        this.logger.error('WebSocket error: ' + x);
+        reject(x);
+      });
     });
 
     await promise;
