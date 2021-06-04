@@ -1,6 +1,6 @@
 {
   "name": "homebridge-garagedoor-ryobi",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Ryobi Garage Door plugin for homebridge: https://github.com/nfarina/homebridge",
   "license": "ISC",
   "repository": {
@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "node-fetch": "^2.6.1",
-    "ws": "^7.4.4"
+    "ws": "^7.4.6"
   },
   "keywords": [
     "homebridge-plugin",
@@ -36,7 +36,7 @@
     "@types/jest": "^26.0.22",
     "@types/node": "^14.14.31",
     "@types/node-fetch": "^2.5.10",
-    "@types/ws": "^7.4.1",
+    "@types/ws": "^7.4.6",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
     "babel-jest": "^26.6.3",
