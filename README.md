@@ -4,7 +4,7 @@
 
 ## Important notice: 
 
-I am not able to support this anymore and am looking for someone who wants to take over maintaince. At the time I wrote this, Oct 2021, this NPM is working but i can no longer fix and test changes. If you are interested in taking this over, and also the published version on npmjs.com site, contact me.
+I am not able to support this anymore and i'm looking for someone who wants to take over maintainance. At the time I wrote this, Oct 2021, this NPM is working but i can no longer fix and test changes. If you are interested in taking this over, and also the published version on npmjs.com site, contact me.
 
 _Sadly My physical garage door is badly broken and will be out of commision for months due to pandemic related supply chain issues. I will be installing a new GDO from another manufacturer when my mew garage door is installed._
 
